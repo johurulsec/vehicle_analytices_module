@@ -1,0 +1,9 @@
+classes= 1
+train  = scripts/wider_train.txt
+val = scripts/wider_val.txt
+names = data/face.names
+backup = /media/xhuv/BigData/face-training-backups/
+
+
+
+

@@ -1,0 +1,7 @@
+classes= 2
+train  = scripts/watchcam_face_train.txt
+valid = scripts/watchcam_face_val.txt
+names = data/watchcam_face.names
+backup = /media/xhuv/BigData/watchcam-train-backup/face/
+
+

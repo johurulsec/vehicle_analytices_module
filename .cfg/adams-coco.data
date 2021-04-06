@@ -1,0 +1,9 @@
+classes= 8
+train  = scripts/train2014_list.txt
+val = scripts/val2014_list.txt
+names = data/ADAMScoco.names
+backup = backup/
+
+
+
+

@@ -1,0 +1,7 @@
+classes= 12
+train  = scripts/watchcam-12class_train.txt
+valid  = scripts/watchcam-12class_val.txt
+names = data/watchcam-12.names
+backup = /media/xhuv/BigData/watchcam-12
+
+

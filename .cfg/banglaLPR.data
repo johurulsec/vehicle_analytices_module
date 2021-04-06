@@ -1,0 +1,9 @@
+classes= 1
+train  = scripts/banglaLPR-train.txt
+val scripts/banglaLPR-val.txt
+names = data/lpr.names
+backup = /media/sigmind/DataPool/LPR-bangla/models/
+
+
+
+

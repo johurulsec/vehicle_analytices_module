@@ -1,0 +1,1 @@
+http://13.126.97.166/api/device-data/create

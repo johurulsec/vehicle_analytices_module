@@ -1,0 +1,7 @@
+classes= 82
+train  = scripts/watchcam_train-82class.txt
+valid  = scripts/watchcam_val-82class.txt
+names = data/watchcam.names
+backup = /media/xhuv/BigData/watchcam-82
+
+

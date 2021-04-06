@@ -1,0 +1,14 @@
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/install/strip.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/install/local.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/curlpp_static.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/edit_cache.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/curlpp.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/rebuild_cache.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/list_install_components.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/CMakeFiles/install.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/extras/CMakeFiles/install/strip.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/extras/CMakeFiles/install.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/extras/CMakeFiles/install/local.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/extras/CMakeFiles/list_install_components.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/extras/CMakeFiles/edit_cache.dir
+/home/sigmind/STOP-COVID-DS5/curlpp/build/extras/CMakeFiles/rebuild_cache.dir

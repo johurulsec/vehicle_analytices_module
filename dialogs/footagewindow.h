@@ -1,0 +1,6 @@
+#ifndef FOOTAGEWINDOW_H
+#define FOOTAGEWINDOW_H
+
+
+
+#endif // FOOTAGEWINDOW_H

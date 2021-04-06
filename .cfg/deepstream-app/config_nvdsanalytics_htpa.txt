@@ -1,0 +1,39 @@
+# Copyright (c) 2020 NVIDIA Corporation.  All rights reserved.
+#
+# NVIDIA Corporation and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA Corporation is strictly prohibited.
+
+# The values in the config file are overridden by values set through GObject
+# properties.
+
+[property]
+#Width height used for configuration to which below configs are configured
+enable=1
+config-width=1280
+config-height=720
+
+[line-crossing-stream-0]
+enable=1
+#Label;direction;lc
+
+line-crossing-Entry=550;500;350;500;200;100;200;600
+line-crossing-Exit=815;500;615;500;605;100;605;600
+
+#line-crossing-Entry=772;799;819;946;623;952;1061;926
+#line-crossing-Entry=1072;911;1143;1058;944;1020;1297;1020;
+#line-crossing-Exit=489;572;489;872;903;573;303;573
+#line-crossing-Exit=490;370;490;670;900;370;300;370
+class-id=0
+
+[overcrowding-stream-0]
+enable=0
+roi-OC=295;643;579;634;642;913;56;828
+#no of objects that will trigger OC
+object-threshold=1
+class-id=0
+
+
+

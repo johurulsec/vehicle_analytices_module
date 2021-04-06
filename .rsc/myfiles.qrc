@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>add.png</file>
+        <file>cancel.png</file>
+        <file>monitor.png</file>
+        <file>tiles.png</file>
+        <file>loading.png</file>
+        <file>sigmind.png</file>
+        <file>wc.png</file>
+        <file>log.png</file>
+        <file>search.png</file>
+        <file>sigmind__Logo.png</file>
+        <file>sigmindLogo.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,7 @@
+classes= 13
+train  = scripts/watchcam-12class_train.txt
+valid  = scripts/watchcam-12class_val.txt
+names = data/watchcam-12.names
+backup = /media/sigmind/DataPool/watchcam-models-backup/
+
+

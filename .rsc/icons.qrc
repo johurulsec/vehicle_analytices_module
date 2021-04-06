@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/new/rscIcons">
+        <file>add.png</file>
+        <file>delete-button.png</file>
+        <file>scale.png</file>
+	<file>wc.png</file>
+    </qresource>
+</RCC>

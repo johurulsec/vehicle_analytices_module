@@ -1,0 +1,439 @@
+# Copyright (c) 2018 NVIDIA Corporation.  All rights reserved.
+#
+# NVIDIA Corporation and its licensors retain all intellectual property /mnt/mmc-USDU1_0x44218410-part1/HTPA-records
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express /media/sigmind/sigmind/HTPA-records
+# license agreement from NVIDIA Corporation is strictly prohibited. /media/sigmind/sigmind/HTPA-records
+
+[application]
+enable-perf-measurement=1
+perf-measurement-interval-sec=5
+#gie-kitti-output-dir=streamscl
+
+
+[ds-example]
+enable=1
+processing-width=240
+processing-height=240
+full-frame=0
+batch-size=8
+unique-id=15
+gpu-id=0
+
+[tiled-display]
+enable=1
+rows=2
+columns=2
+width=1920
+height=1080
+gpu-id=0
+#(0): nvbuf-mem-default - Default memory allocated, specific to particular platform
+#(1): nvbuf-mem-cuda-pinned - Allocate Pinned/Host cuda memory, applicable for Tesla
+#(2): nvbuf-mem-cuda-device - Allocate Device cuda memory, applicable for Tesla
+#(3): nvbuf-mem-cuda-unified - Allocate Unified cuda memory, applicable for Tesla 
+#(4): nvbuf-mem-surface-array - Allocate Surface Array memory, applicable for Jetson
+nvbuf-memory-type=0
+
+[source0]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.42/Streaming/Channels/101
+num-sources=1
+#drop-frame-interval=2
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam0
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+
+
+[source1]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.43/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam1
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+[source2]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.44/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam2
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+[source3]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.45/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam3
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+[source4]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.46/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam4
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+[source5]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.47/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam5
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+[source6]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.49/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam6
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+[source7]
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP
+type=4
+uri=rtsp://admin:bhtpa-kk@192.168.1.50/Streaming/Channels/101
+#uri=file:///home/sigmind/Videos/CarNumberPlateVideo.mp4
+num-sources=1
+gpu-id=0
+
+# smart record specific fields, valid only for source type=4
+smart-record=1
+# 0 = mp4, 1 = mkv
+smart-rec-container=0
+smart-rec-file-prefix=watchcam
+smart-rec-dir-path=/media/sigmind/bhtpa-kk-2/video-records/cam7
+# video cache size in seconds
+smart-rec-video-cache=60
+# default duration of recording in seconds.
+smart-rec-default-duration=120
+# duration of recording in seconds.
+# this will override default value.
+smart-rec-duration=120
+# seconds before the current time to start recording.
+smart-rec-start-time=30
+# value in seconds to dump video stream.
+smart-rec-interval=0
+
+# (0): memtype_device   - Memory type Device
+# (1): memtype_pinned   - Memory type Host Pinned
+# (2): memtype_unified  - Memory type Unified
+cudadec-memtype=0
+
+
+
+[sink0]
+enable=1
+#Type - 1=FakeSink 2=EglSink 3=File
+type=2
+sync=0
+source-id=0
+gpu-id=0
+nvbuf-memory-type=0
+
+[sink1]
+enable=0
+#Type - 1=FakeSink 2=EglSink 3=File
+type=2
+sync=0
+source-id=1
+gpu-id=0
+nvbuf-memory-type=0
+
+[sink2]
+enable=0
+#Type - 1=FakeSink 2=EglSink 3=File
+type=2
+sync=0
+source-id=2
+gpu-id=0
+nvbuf-memory-type=0
+
+[sink3]
+enable=0
+#Type - 1=FakeSink 2=EglSink 3=File 4=RTSPStreaming
+type=4
+#1=h264 2=h265
+codec=1
+sync=0
+#iframeinterval=10
+bitrate=400000
+# set below properties in case of RTSPStreaming
+rtsp-port=8554
+udp-port=5400
+
+[osd]
+enable=1
+gpu-id=0
+border-width=4
+text-size=15
+text-color=1;1;1;1;
+text-bg-color=0.3;0.3;0.3;1
+font=Serif
+show-clock=0
+clock-x-offset=800
+clock-y-offset=820
+clock-text-size=12
+clock-color=1;0;0;0
+nvbuf-memory-type=0
+
+[streammux]
+gpu-id=0
+##Boolean property to inform muxer that sources are live
+live-source=1
+batch-size=8
+##time out in usec, to wait after the first buffer is available
+##to push the batch even if the complete batch is not formed
+batched-push-timeout=40000
+## Set muxer output width and height
+width=1280
+height=720
+##Enable to maintain aspect ratio wrt source, and allow black borders, works
+##along with width, height properties
+enable-padding=0
+nvbuf-memory-type=0
+
+# config-file property is mandatory for any gie section.
+# Other properties are optional and if set will override the properties set in
+# the infer config file.
+# Inference Engine 
+
+# Vehicle. Person, Roadsign 
+
+[primary-gie]
+enable=1
+gpu-id=0
+#model-engine-file=../../models/Primary_Detector/resnet10.caffemodel_b4_int8.engine
+#Required by the app for OSD, not a plugin property
+bbox-border-color0=1;0;0;1
+bbox-border-color1=0;1;1;1
+bbox-border-color2=0;0;1;1
+bbox-border-color3=0;1;0;1
+interval=0
+gie-unique-id=1
+nvbuf-memory-type=0
+config-file=config_infer_primary.txt
+
+[tracker]
+enable=0
+tracker-width=640
+tracker-height=368
+#ll-lib-file=/opt/nvidia/deepstream/deepstream-4.0/lib/libnvds_mot_iou.so
+#ll-lib-file=/opt/nvidia/deepstream/deepstream-4.0/lib/libnvds_nvdcf.so
+ll-lib-file=/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_klt.so
+#ll-config-file required for DCF/IOU only
+#ll-config-file=tracker_config.yml
+#ll-config-file=iou_config.txt
+gpu-id=0
+#enable-batch-process applicable to DCF only
+enable-batch-process=1
+
+# Face and LP Detector Network 
+
+[secondary-gie0]  
+enable=0
+#model-engine-file=../../models/Secondary_VehicleTypes/resnet18.caffemodel_b16_int8.engine
+gpu-id=0
+batch-size=3
+gie-unique-id=2
+operate-on-gie-id=1
+operate-on-class-ids=0;
+config-file=pgie_config_fd_lpd.txt
+
+#Color classification NEtwork
+
+[secondary-gie1]
+enable=0
+#model-engine-file=../../models/Secondary_CarColor/resnet18.caffemodel_b16_int8.engine
+batch-size=16
+gpu-id=0
+gie-unique-id=5
+operate-on-gie-id=1
+operate-on-class-ids=0;2;
+config-file=config_infer_secondary_carcolor.txt
+
+[secondary-gie2]
+enable=0
+#model-engine-file=../../models/Secondary_CarMake/resnet18.caffemodel_b16_int8.engine
+batch-size=16
+gpu-id=0
+gie-unique-id=6
+operate-on-gie-id=1
+operate-on-class-ids=0;
+config-file=config_infer_secondary_carmake.txt
+
+[tests]
+file-loop=1

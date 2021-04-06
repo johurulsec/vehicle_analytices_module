@@ -1,0 +1,2626 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
+#include <deepstream_source_code.h>
+
+//#include <dialogs/settingsdialog.h>
+
+#include <QDebug>
+#include <QFile>
+#include <QMutex>
+#include "deepstream/deepstream_app.h"
+#include "deepstream_config_file_parser.h"
+#include "nvds_version.h"
+#include <string.h>
+#include <unistd.h>
+#include <termios.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include "deepstream/deepstream_app.h"
+#include "deepstream_config_file_parser.h"
+#include "nvds_version.h"
+#include <string.h>
+#include <unistd.h>
+#include <termios.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <gst/gst.h>
+#include <glib.h>
+#include "gstnvdsmeta.h"
+#include <ostream>
+#include <iostream>
+#include <math.h>
+#include <stdlib.h>
+
+//#define _CRTDBG_MAP_ALLOC
+//#include <crtdbg.h>
+
+static MainWindow * staticO;
+Deepstream_source_code *dsc;
+Display* display;
+
+void MainWindow::load_faces()
+{
+    qDebug()<<"inside load faces\n";
+}
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+{
+
+    staticO = this;
+    ui->setupUi(this);
+
+    QSize availableSize = qApp->desktop()->availableGeometry().size();
+    int width = availableSize.width();
+    int height = availableSize.height();
+    menubar_height = ui->seachLayoutWidget->geometry().height();
+    //    qDebug() << "---d=d " << ui->seachLayoutWidget->geometry().height();
+
+    wid = width;
+    hei = height;
+    //centerAndResize();// resize mainwindow dynamic
+
+    /* Basedul islam */
+    configdb = new config_database();
+    connect(configdb, SIGNAL(AddToLoadTemplate(QString,QString)), this, SLOT(AddToLoadTemplate(QString,QString)));
+    connect(configdb, SIGNAL(deleteFromLoadTem(QString, QString)), this, SLOT(deleteFromLoadTem(QString, QString)));
+    // end of Basedul islam
+    connect(configdb, SIGNAL(batchDir(QString)), this, SLOT(batchDirMain(QString)));
+
+    QPixmap wcIcon("./.rsc/wc.png");
+    ui->iconWC->setPixmap(wcIcon.scaledToHeight(60));
+    styles.initializeValues();
+    qDebug() << myStyles::objectSensitivityValue;
+    qDebug() << myStyles::emailsTo;
+
+    //      QString cam1 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+
+    //  //   QString cam1 = "rtsp://admin:admin123@103.113.17.146:2400/cam/realmonitor?channel=1&subtype=0";
+
+    //      QString cam2 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+
+    //      QString cam3 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+
+    //      QString cam4 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+    // //
+    //      QString cam5 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+
+    //      QString cam6 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+
+    //      QString cam7 = "/home/imran/Downloads/deepstream_sdk_v4.0.1_jetson/samples/streams/sample_720p.mp4";
+
+    //      QString cam8 = "0";
+
+    //      QString camList[5];
+
+    //      QFile file("./files/cameraList.txt");
+    //      if(!file.open(QIODevice::ReadOnly)) {
+    //          //QMessageBox::information(0, "error", file.errorString());
+    //      }
+
+    //      QTextStream in(&file);
+    //      int camListI=0;
+    //      while(!in.atEnd()) {
+    //         camList[camListI] = in.readLine();
+    //            camListI++;
+    //      }
+
+    //QString cam5 = camList[0];
+    // QString cam9 = camList[1];
+
+
+    //qDebug() << "CamList read >> " << cam5 << " and " << cam9 ;
+    // running= false;
+    this->setWindowTitle("WATCHCAM");
+    this->setAttribute(Qt::WA_DeleteOnClose , true);
+    darknet_mutex = new QMutex();
+
+    // this->show();
+
+    flowLayout= new FlowLayout(0,0,0);
+
+
+
+    ui->scrollAreaWidgetContents->setLayout(flowLayout);
+
+    ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    //gridLayout= new QGridLayout();
+    searchOn = false;
+    searchFOn = false;
+    searchLPRon = false;
+
+    //  connect(this, SIGNAL(emitDSFace(cv::Mat, int)), this, SLOT(DSaddFace_triggered(cv::Mat, int)));
+    //    connect(newFeed, SIGNAL(emitLP(QPixmap, int)), this, SLOT(addLPR_triggered(QPixmap, int)));
+    //    connect(newFeed, SIGNAL(emitTile(QPixmap,QString,int)), this, SLOT(addObject(QPixmap,QString,int)));
+    //    //connect(newFeed, SIGNAL(emitLP(QPixmap,QString,int)), this, SLOT(addObject(QPixmap,QString,int)));
+    //    connect(newFeed, SIGNAL(notify(QPixmap,QString,int)), this, SLOT(makeNotification(QPixmap,QString,int)));
+
+
+
+
+
+    /* for face notification */
+    //connect(this, SIGNAL(notifyFace(QPixmap,QString,int)), this, SLOT(makeNotification(QPixmap,QString,int)));
+
+    facesWindow = new Faces(this);
+    /* for face notification show right bar[ temporay now, go to on_tileButton_clicked] */
+    connect(facesWindow, SIGNAL(notifyFaceFromUniqueFace(QPixmap, QString, int, int, int, double)), this, SLOT(makeNotification(QPixmap, QString, int, int, int, double)));
+
+    // facesWindow->deleteLater();
+    // facesWindow = nullptr;
+    ui->colorCombo->addItems(myStyles::colors);
+    ui->objectCombo->addItems(myStyles::objects);
+
+    QMenuBar *rightBar = new QMenuBar(ui->menuBar);
+
+    QAction *action = new QAction("Notifications", rightBar);
+    rightBar->addAction(action);
+
+    connect(action, SIGNAL(triggered(bool)), this, SLOT(notificationSLot(bool)));
+
+    ui->menuBar->setCornerWidget(rightBar);
+    //nots= new notWidget(this);
+    nots= new notWidget("stringValue", this);
+    lpr_emailController = new ServiceControllerForLPR(this);
+    connect(lpr_emailController, SIGNAL(addANotLP(Notification*)), this, SLOT(addNotToBarLP(Notification*)));
+
+    lpnots = new LpNotWidget(this);
+    lpnots->setVisible(false);
+    setNotPosition();
+    nots->setVisible(false);
+    notOn= false;
+
+    emailController= new ServiceController(this);
+
+    connect(emailController, SIGNAL(addANot(Notification*)), this, SLOT(addNotToBar(Notification*)));
+
+
+    //manager = new QNetworkAccessManager(this);
+
+    // connect(manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(replyFinished(QNetworkReply*)));
+
+    ui->startButton->setDisabled(false);  // True for Trial
+
+    ui->menuBar->setDisabled(false);    // True for trial
+
+    //  ui->actionFootage_analysis->setDisabled(true);
+    ui->scrollArea->setDisabled(false);
+    //    eula *eulaDialog = new eula;
+    //    eulaDialog->setAttribute( Qt::WA_DeleteOnClose );
+    //    connect(eulaDialog, SIGNAL(agree()), this, SLOT(agreed()));
+    //    connect(eulaDialog, SIGNAL(disagree()), this, SLOT(disagreed()));
+    //    eulaDialog->show();
+
+    this->setWindowTitle("WATCHCAM");
+    this->showMaximized();
+    //    ui->pauseButton->setHidden(true);
+    //    ui->playButton->setHidden(true);
+    //    ui->nextButton->setHidden(true);
+    // this->show();
+    thread = new QThread();
+    worker = new Worker();
+
+    worker->moveToThread(thread);
+
+    //    conconnect(this, SIGNAL(requestUpdateLPR(QPixmap,QString,int)), this, SLOT(
+    //    conconnect(this, SIGNAL(requestUpdateLPR(QPixmap,QString,int)), this, SLOT(valueChanged(QPixmap,QString,int));
+    //          //  connect(worker,SIGNAL(valueChangedLPR(QString)), this, SLOT()
+    connect(worker, SIGNAL(workRequested()), thread, SLOT(start()));
+
+    connect(thread, SIGNAL(started()), this, SLOT(callDoWorkFromMain()));
+    connect(this, SIGNAL(requestUpdateLPR(QPixmap,QString,int)), worker, SLOT(doWork(QPixmap,QString,int)));
+    //   //
+    //   // connect(worker,SIGNAL(valueChangedLPR(QString)), this, SLOT(valueChanged(QPixmap,QString,int)));
+    connect(worker, SIGNAL(valueChanged(QPixmap,QString,int)), this, SLOT(addLP(QPixmap,QString,int)));
+    connect(worker, SIGNAL(valueChanged(QPixmap,QString,QPixmap, QString)), this, SLOT(addLP(QPixmap,QString,QPixmap, QString)));
+    connect(worker, SIGNAL(finishedLPR()), thread, SLOT(quit()), Qt::DirectConnection);
+
+
+    //  struct croppedFace d;
+
+    FRthread = new QThread();
+
+    warker = new Warker();
+
+
+    warker->moveToThread(FRthread);
+
+    warker->load_template();
+
+    // warker->requestWark();
+
+    // face_detector = dlib::get_frontal_face_detector();
+    qDebug()<<"face detector initiated\n";
+    // std::vector<string> names;
+    //  GetFilesInDirectory(templates_names,"./faces/temp_late");
+
+    //d.message = "message\n";
+
+
+    //  warker->setup(templates_names, template_descriptors);
+    //   warker->setup(templates_names,template_descriptors);
+    // connect(this,SIGNAL(load_template()), warker, SLOT(receive_template()));
+
+    connect(warker, SIGNAL(warkRequested()), FRthread, SLOT(start()));
+    connect(FRthread, SIGNAL(started()), this, SLOT(dowarkStarted()));
+    //  connect(thread, SIGNAL(started()), worker, SLOT(doWork(int)));
+    //    connect(this, SIGNAL(requestUpdateFR(cv::Mat,QString,int)), warker, SLOT(doWark(cv::Mat,QString,int)));
+    connect(this, SIGNAL(requestUpdateFR(cv::Mat,QString,int, float, int, bool)), warker, SLOT(doWark(cv::Mat,QString,int, float, int, bool)));
+
+    //connect(this, SIGNAL(requestUpdateLPR(QPixmap,QString,int)), this, SLOT(valueChanged(QPixmap,QString,int));
+    //  connect(worker,SIGNAL(valueChangedLPR(QString)), this, SLOT()
+
+    // connect(worker,SIGNAL(valueChangedLPR(QString)), this, SLOT(valueChanged(QPixmap,QString,int)));
+    connect(warker, SIGNAL(valueFRChanged(QPixmap,QString,int, double, dlib::matrix<float,(long)0,(long)1>, int, int)), this, SLOT(addFR(QPixmap,QString,int, double, dlib::matrix<float,(long)0,(long)1>, int, int)));
+    connect(warker, SIGNAL(finishedFR()), FRthread, SLOT(quit()), Qt::DirectConnection);
+
+    connect(this, SIGNAL(batchDirFromMain(QString)), warker, SLOT(batchEnrollment(QString)));
+    connect(warker, SIGNAL(batchLoadingDone(int, int)), this, SLOT(nBatchLoadingDone(int, int)));
+    connect(warker, SIGNAL(notLoadedBatch(QString)), this, SLOT(nlBatchNotify(QString)));
+    connect(warker, SIGNAL(addToDbBatch(QString, QString)), this, SLOT(fromBatchEnr(QString, QString)));
+    connect(warker, SIGNAL(totSizeOfNames(int)), this, SLOT(totalSizeOfNameToProg(int)));
+    //  facesWindow->setAttribute( Qt::WA_DeleteOnClose , true);
+    connect(warker, SIGNAL(faceDesToMain(std::vector<dlib::matrix<float,(long)0,(long)1>>)), this, SLOT(faceDesFromWark(std::vector<dlib::matrix<float,(long)0,(long)1>>)));
+
+    printf("starting");
+
+    dsc = new Deepstream_source_code(this/*, width, height*/);
+    // dsc = new Deepstream_source_code();
+    deepstream_thread = new QThread();
+    //dsc->constructorDeepStream();
+    dsc->moveToThread(deepstream_thread);
+    connect(this, SIGNAL(requestWorkDS()), deepstream_thread, SLOT(start()));
+    connect(deepstream_thread, SIGNAL(started()), dsc, SLOT(startDeepStream()));
+    connect(this, SIGNAL(finishedDS()), deepstream_thread, SLOT(quit()), Qt::DirectConnection);
+    //connect(dsc, SIGNAL(sendDisToMainFromDssc(Display*)), this, SLOT(getDisFromDs(Display*)));
+    connect(dsc, SIGNAL(setDispRowColumn(int, int)), this, SLOT(getDispRowsColumns(int,int)));
+    left_clicked_full_disp_blink = false;
+    emit requestWorkDS();
+
+
+
+
+
+
+    NotificationManager();
+
+    // qDebug()<<"constr of mainwindow tested";
+
+    trialTimer= new QTimer(this);
+    connect(trialTimer, SIGNAL(timeout()), this, SLOT(cleanTiles()));
+    trialTimer->start(3600000);// 1 minute
+
+
+    /* db sync start */
+    db_sync_th = new QThread();
+    sync_var = new db_sync();
+    sync_var->moveToThread(db_sync_th);
+    connect(sync_var, SIGNAL(workRequestedSyTh()), db_sync_th, SLOT(start()));
+    connect(db_sync_th, SIGNAL(started()), this, SLOT(dbSyncDowark()));
+    connect(this, SIGNAL(requestDoWark(int, QPixmap, QString, int, double)), sync_var, SLOT(doWarkSync(int, QPixmap, QString, int, double)));
+    connect(sync_var, SIGNAL(finishedSyTh()), db_sync_th, SLOT(quit()), Qt::DirectConnection);
+    connect(sync_var, SIGNAL(insertToDb(int, QPixmap, QString, int, double, QString, int, QString, QString, QString, int)), this, SLOT(callAddToDb(int, QPixmap, QString, int, double, QString, int, QString, QString, QString, int)));
+
+
+    sy_timer = new QTimer();
+    connect(sy_timer, SIGNAL(timeout()), this, SLOT(syncChecker()));
+    //    sy_timer->start(5000);// 5 second
+
+    check_last_id = 0;
+    getLastDBId();
+
+    synnc_chek_T = new QThread();
+    sync_ch = new sync_checker();
+    sync_ch->moveToThread(synnc_chek_T);
+    connect(sync_ch, SIGNAL(workRequestedChT()), synnc_chek_T, SLOT(start()));
+    connect(synnc_chek_T, SIGNAL(started()), this, SLOT(syncChCallDoWark()));
+    connect(this, SIGNAL(data_transfer_to_syncDowark(int, QString, QString, QString, double, int, int, int)), sync_ch, SLOT(doWarkSyncChe(int, QString, QString, QString, double, int, int, int)));
+    connect(sync_ch, SIGNAL(finishedSyChT()), synnc_chek_T, SLOT(quit()), Qt::DirectConnection);
+    connect(sync_ch, SIGNAL(updateDb(int)), this, SLOT(updateFeedAddFace(int)));
+
+
+    newSettings= new settingsDialog();
+    connect(newSettings, SIGNAL(transferSuspectStateToMainWindow(bool)), this, SLOT(getSuspectCheckStateFromSettingsDialog(bool)));
+
+
+
+    pr = new ProgressBarLoading();
+    //    pr->setProgressBarMaximumValue(100);
+    //    pr->setProgressBarMinimumValue(0);
+    pr->setMinMax(0, 100);
+    connect(this, SIGNAL(setDifferSettings(int)), pr, SLOT(setDiffer(int)));
+    connect(this, SIGNAL(valueProgChange(int)), pr, SLOT(progressOperation(int)));
+
+    show_face = new ShowFace(this);
+    //show_face->addFr(pic);
+
+    connect(facesWindow, SIGNAL(emitPicDB_mw_signal(QPixmap)), configdb, SLOT(showFaceToConfigDB(QPixmap)));
+
+    FRThreshold = 0.45;// default frthreshold value
+    connect(newSettings, SIGNAL(fr_thresholed_value_settingdialog(float)), this ,SLOT(fr_thresholed_value(float)));
+
+    //int height = screenGeometry.height();
+    // int width = screenGeometry.width();
+
+    //    int x=0;//(width - w.width()) / 2.0;
+    //    int y=-100;//(height - w.height()) / 2.0;
+    //    facesWindow->setGeometry(x,y,600,1000);
+    //    facesWindow->show();
+
+    search = new SearchByGivenImage();
+    connect(search, SIGNAL(goMainW(QString,QString)), this, SLOT(fromSearchByGI(QString,QString)));
+    connect(warker, SIGNAL(fromWarker(QStringList)), this, SLOT(inMain(QStringList)));
+    connect(this, SIGNAL(goSearchByGivenIm(QStringList)), search, SLOT(cathList(QStringList)));
+
+    sbi = new SearchByImage();
+    connect(sbi, SIGNAL(fromSearchByImg(QString)), this, SLOT(fromSearchByImgtoMain(QString)));
+    connect(this, SIGNAL(goSBI(QStringList)), sbi, SLOT(fromMain_Wark(QStringList)));
+
+    loadDetectedFace();// load detected face to descriptors
+    suspect_state = true;//false silo
+
+    //    Display* display = XOpenDisplay(NULL);
+
+    //    XSynchronize(display, True);
+
+    //    Window x11root = XDefaultRootWindow(display);
+
+    //    int x = 500;
+    //    int y = 500;
+    //    unsigned int width = 721;
+    //    unsigned int height = 461;
+
+    //    unsigned int borderWidth = 0;
+    //    long colorBlue = 0xff0000ff;
+
+    //    Window x11w = XCreateSimpleWindow(display, x11root, x, y,
+    //                                      width, height, borderWidth, 1 /*magic number*/, colorBlue);
+
+    //    XReparentWindow(display, x11w, staticO->winId(), 310, 68);
+    //    XMapWindow(display, x11w);
+
+    uniq_face_window = new uniqueFaceWidget("strValue", this);
+    connect(facesWindow, SIGNAL(unique_face_to_main_window(QPixmap, QString, int, int, int, double)), this, SLOT(make_notification_for_unique_face(QPixmap, QString, int, int, int, double)));
+
+    int y2 = ui->menuBar->geometry().y()+450;//426
+    int x2= this->width()-1360;//1360
+    //    //uniq_face_window->move(wid/4-8,menubar_height+4+hei/2);
+    //    uniq_face_window->move(wid/4-8,menubar_height+4+hei/2);
+    //    uniq_face_window->setFixedWidth((wid-(wid/4))+13);
+    //    uniq_face_window->setFixedHeight(hei/3+45);
+
+    uniq_face_window->move(wid/4-8,menubar_height+4+hei/2);
+    uniq_face_window->setFixedWidth(wid/2+20);
+    uniq_face_window->setFixedHeight(hei/3+45);
+
+    frame = new QFrame(this);
+    frame->setFrameStyle(QFrame::Box | QFrame::Plain);
+    frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowTransparentForInput | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    frame->setObjectName("testframe");
+    frame->setStyleSheet("#testframe {border: 8px solid green;}");
+    frame->setWindowOpacity(0.5);
+    //    frame->setAttribute(Qt::WA_TranslucentBackground);
+
+    //    frame->setParent(this);
+    blink_check = false;
+    //blink_check_from_ui = false;
+    blink_timer = new QTimer();
+    connect(blink_timer, SIGNAL(timeout()), this, SLOT(blinkTimerSl()));
+    //    blink_timer->start(1000);// 5 second
+
+    frame_search_by_name = new QFrame(this);
+    frame_search_by_name->setFrameStyle(QFrame::Box | QFrame::Plain);
+    frame_search_by_name->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowTransparentForInput | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    frame_search_by_name->setObjectName("testframeByNames");
+    frame_search_by_name->setStyleSheet("#testframeByNames {border: 8px solid green;}");
+    frame_search_by_name->setWindowOpacity(0.5);
+
+    blink_check_by_name = false;
+    blink_timer_search_by_name = new QTimer();
+    connect(blink_timer_search_by_name, SIGNAL(timeout()), this, SLOT(blinkTimerSearchByName()));
+    name_and_source.first = "";
+    name_and_source.second = 0;
+
+    delete_prev_date = new QTimer();
+    connect(delete_prev_date, SIGNAL(timeout()), this, SLOT(deleteLastOneDayFromEightDays()));
+    delete_prev_date->start(3600000);
+
+
+
+}
+
+void MainWindow::addNotToBarLP(Notification *noti)
+{
+    qDebug()<<"carnotbar"<<" carType = "<<noti->name;
+    LpSingleWidg *newNot = new LpSingleWidg(noti->pic, noti->name, noti->cam, "", this);
+    //    LPNotif *newNot= new LPNotif(noti->pic, noti->name, noti->cam, "", this);
+    lpnots->addNotLP(newNot);
+    lpnots->setVisible(true);
+    notOn= true;
+}
+
+void MainWindow::deleteLastOneDayFromEightDays()
+{
+    if(connectionDB()){
+        QString qDeleteLastdate = "SELECT DISTINCT STRFTIME('%Y-%m-%d', date_time) from FeedAddFace ORDER by date_time DESC;";
+        QSqlQuery quDel;
+        if(quDel.exec(qDeleteLastdate)){
+            //qDebug() << "Total number of rows affected = "<< quDel.size();
+            int tracking_to_row = 0;
+            while(quDel.next()){
+                ++tracking_to_row;
+                if(tracking_to_row > 7){
+                    //                    qDebug() << "Output = " << quDel.value(0).toString();
+                    QString _del = "delete from FeedAddFace where STRFTIME('%Y-%m-%d', date_time) = ?;";
+                    QSqlQuery q_del;
+                    q_del.prepare(_del);
+                    q_del.addBindValue(quDel.value(0).toString());
+                    if(q_del.exec()){
+                        //                        qDebug() << "Delete -> " << quDel.value(0).toString() << " " << quDel.numRowsAffected();
+                    }/*else{
+                        qDebug() << "Output = " << quDel.value(0).toString();
+                        qDebug() << q_del.lastQuery();
+                        qDebug() << q_del.lastError();
+                    }*/
+
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::callDoWorkFromMain()
+{
+    emit requestUpdateLPR(worker->pi, worker->s, worker->ind);
+}
+void MainWindow::blinkTimerSl(){
+    QString object = ui->objectCombo->currentText();
+    //    QString object = myStyles::objects.at(ui->objectCombo->currentIndex());
+    //    int color = myStyles::colorValues.at(ui->colorCombo->currentIndex()-1);
+    //qDebug() << "Object & Color = " << object << " " << color;
+    if(left_clicked_full_disp_blink == false){
+        if(source_and_object.second == 0){
+            if(QString::compare("Face", object) == 0){
+                if(blink_check == false){
+                    blink_check = true;
+                }else{
+                    blink_check = false;
+                }
+                if(blink_check == true){
+                    frame->setGeometry(rects[source_and_object.first].left, rects[source_and_object.first].top, rects[source_and_object.first].right, rects[source_and_object.first].bot);    // Just some fixed values to test
+                    frame->show();
+                }else{
+                    frame->close();
+                }
+            }
+        }
+    }else if(left_clicked_full_disp_blink == true){
+        int x = wid/4+2;
+        int y = menubar_height+33;
+        int w = wid/2;
+        int h = hei/2;
+        qDebug() << x << " out " << y << " " << w << " " << h;
+        if(source_and_object.second == 0){
+            if(QString::compare("Face", object) == 0){
+                if(blink_check == false){
+                    blink_check = true;
+                }else{
+                    blink_check = false;
+                }
+                if(blink_check == true){
+                    frame->setGeometry(x, y, w, h);    // Just some fixed values to test
+                    frame->show();
+                }else{
+                    frame->close();
+                }
+            }
+        }
+    }
+
+}
+
+void MainWindow::blinkTimerSearchByName()
+{
+    QString tempF = ui->faceLineEdit->text();
+    if(QString::compare(tempF, name_and_source.first) == 0){
+        if(blink_check_by_name == false){
+            blink_check_by_name = true;
+        }else{
+            blink_check_by_name = false;
+        }
+        if(blink_check_by_name == true){
+            frame_search_by_name->setGeometry(rects[source_and_object.first].left, rects[source_and_object.first].top, rects[source_and_object.first].right, rects[source_and_object.first].bot);    // Just some fixed values to test
+            frame_search_by_name->show();
+        }else{
+            frame_search_by_name->close();
+        }
+    }
+
+
+}
+
+
+//void MainWindow::paintEvent(QPaintEvent *)
+//{
+//    QPainter painter(this);
+//    painter.setRenderHint(QPainter::Antialiasing);
+//    painter.setPen(Qt::darkGreen);
+//    painter.drawRect(512, 68,683, 220);
+
+////    painter.setPen(Qt::darkGray);
+////    painter.drawLine(512, 68, 683, 68);
+//}
+MainWindow::~MainWindow()
+{
+    emit finishedDS();
+    //worker->abort();
+    // thread->wait();
+    // qDebug()<<"Deleting thread and worker in Thread "<<this->QObject::thread()->currentThreadId();
+    // delete thread;
+    // delete worker;
+
+    // delete dsc;
+
+    warker->abort();
+    //FRthread->wait();
+    qDebug()<<"Deleting thread and worker in Thread "<<this->QObject::thread()->currentThreadId();
+    delete FRthread;
+    delete warker;
+    // delete newFeed2;
+    // delete newFeed3;
+    //delete newFeed4;
+    //deepstream_thread->abort();
+
+    delete deepstream_thread;
+
+    //    g_print ("Returned, stopping playback\n");
+    //    gst_element_set_state (pipeline, GST_STATE_NULL);
+    //    g_print ("Deleting pipeline\n");
+    //    gst_object_unref (GST_OBJECT (pipeline));
+    //    g_source_remove (bus_watch_id);
+    //    g_main_loop_unref (loop);
+    delete sbi;
+    delete search;
+    delete frame;
+    delete frame_search_by_name;
+    delete ui;
+}
+
+void MainWindow::centerAndResize() {
+    // get the dimension available on this screen
+    QSize availableSize = qApp->desktop()->availableGeometry().size();
+    int width = availableSize.width();
+    int height = availableSize.height();
+    qDebug() << "Available dimensions " << width << "x" << height;
+    width *= 0.5; // 90% of the screen size
+    height *= 0.9; // 90% of the screen size
+    qDebug() << "Computed dimensions " << width << "x" << height;
+    QSize newSize( width, height );
+    this->setGeometry(
+                QStyle::alignedRect(
+                    Qt::LeftToRight,
+                    Qt::AlignCenter,
+                    newSize,
+                    qApp->desktop()->availableGeometry()
+                    )
+                );
+}
+
+void MainWindow::setNegative_left_clicked_full_disp_blink()
+{
+    staticO->left_clicked_full_disp_blink = false;
+}
+
+void MainWindow::setPositive_left_clicked_full_disp_blink()
+{
+    staticO->left_clicked_full_disp_blink = true;
+}
+
+void MainWindow::dispInMainWind()
+{
+    //Display* display = dsc->disToMain;
+
+    Window x11w = dsc->singleWin;
+
+    XReparentWindow(display, x11w, staticO->winId(), (staticO->wid/4), staticO->menubar_height+8);
+    XMapWindow(display, x11w);
+
+
+
+
+    //    Window x11root1 = XRootWindow(display, 0);
+    //    int x = 0;
+    //    int y = 0;
+    //    unsigned int width = 300;
+    //    unsigned int height = 300;
+
+    //    unsigned int borderWidth = 0;
+    //    long colorBlue = 0xff0000ff;
+
+    //    Window x11w1 = XCreateSimpleWindow(display, x11root1, x, y,
+    //                                       width, height, borderWidth, 1 /*magic number*/, colorBlue);
+
+
+    //    XReparentWindow(display, x11w1, x11w, (staticO->wid/4)+100, staticO->menubar_height+8);
+    //    XMapWindow(display, x11w1);
+
+    //    int screen;
+    //    screen  = XDefaultScreen(display);
+    //    XGCValues gr_values;
+    //    gr_values.function =   GXcopy;
+    //    gr_values.plane_mask = AllPlanes;
+    //    gr_values.foreground = BlackPixel(display,screen);
+    //    gr_values.background = WhitePixel(display,screen);
+    //    GC gr_context;
+    //    gr_context=XCreateGC(display,x11w,
+    //                         GCFunction | GCPlaneMask | GCForeground | GCBackground,
+    //                         &gr_values);
+    //    XEvent event;
+    //    while(1){
+    //        XNextEvent(display,&event);
+
+    //        switch(event.type){
+    //        case Expose:
+    //            XDrawLine(display,x11w1,gr_context,0,0, 100, 100);
+    //            //XDrawString(display,x11w,gr_context,100,100,"hello",5);
+    //            break;
+    //        case KeyPress:
+    //            XCloseDisplay(display);
+    //            exit(0);
+
+    //        }
+    //    }
+
+
+    //    XReparentWindow(display, x11w, staticO->winId(), (0), staticO->menubar_height+8);
+    //    XMapWindow(display, x11w1);
+}
+
+void MainWindow::dispInMainWind2()
+{
+    display = dsc->disToMain;
+
+    XSynchronize(display, True);
+}
+
+int MainWindow::getDispWidth()
+{
+    return staticO->wid;
+}
+
+int MainWindow::getDispHeight()
+{
+    return staticO->hei;
+}
+//void MainWindow::getDisFromDs(Display*){
+
+//}
+void MainWindow::batchDirMain(QString dir_path)
+{
+    qDebug() << "batchDirMain";
+    //emit batchDirFromMain(dir_path);
+    //    warker->finishTh();
+    warker->batchEnrollment(dir_path);
+}
+void MainWindow::fromBatchEnr(QString name, QString path)
+{
+    emit valueProgChange(1);
+    qDebug() << "Name = " << name << " " << path;
+    addToAddFace(name, path);
+}
+
+void MainWindow::nlBatchNotify(QString name)
+{
+    //    QMessageBox msgBox;
+    //    msgBox.setText(name+" is not loaded!");
+    //    msgBox.exec();
+
+    QMessageBox *msgBox = new QMessageBox(QMessageBox::Information, "Info",
+                                          name+" is not loaded.",
+                                          QMessageBox::Ok);
+
+    //    QTimer *msgBoxCloseTimer = new QTimer(this);
+    //    msgBoxCloseTimer->setInterval(3000);
+    //    msgBoxCloseTimer->setSingleShot(true);
+    //    connect(msgBoxCloseTimer, SIGNAL(timeout()), msgBox, SLOT(reject()));
+    //    msgBoxCloseTimer->start();
+
+    msgBox->exec();
+}
+
+void MainWindow::nBatchLoadingDone(int names, int coun)
+{
+    pr->close();
+    pr->resetData();
+    //    qDebug() << "Names = " << names << " Coun = " << coun;
+    QMessageBox *msgBox;
+    msgBox= new QMessageBox(QMessageBox::Information, "Info",
+                            "Total numbers of objects = "+QString::number(names)+"\n"
+                                                                                 "Successfully loaded = "+QString::number(names-coun)+"\n"
+                                                                                                                                      "Could not load = "+QString::number(coun),
+                            QMessageBox::Ok);
+
+    QTimer *msgBoxCloseTimer = new QTimer(this);
+    msgBoxCloseTimer->setInterval(10000);
+    msgBoxCloseTimer->setSingleShot(true);
+    connect(msgBoxCloseTimer, SIGNAL(timeout()), msgBox, SLOT(reject()));
+    msgBoxCloseTimer->start();
+
+    msgBox->exec();
+}
+
+void MainWindow::getSuspectCheckStateFromSettingsDialog(bool state)
+{
+    qDebug() << "Got state " << state;
+    suspect_state = state;
+}
+
+void MainWindow::totalSizeOfNameToProg(int val)
+{
+    emit setDifferSettings(val);
+}
+
+void MainWindow::fr_thresholed_value(float frthrsh){
+    FRThreshold = frthrsh;
+    qDebug()<<"fr_threshold value "<<FRThreshold;
+}
+
+void MainWindow::fromSearchByGI(QString img_path, QString dir_path)
+{
+    qDebug() << "MainWindow::fromSearchByGI";
+    warker->searchByImgToDir(img_path, dir_path);
+}
+
+void MainWindow::inMain(QStringList list)
+{
+    emit goSearchByGivenIm(list);
+}
+
+void MainWindow::loadDetectedFace()
+{
+    std::ifstream TD_file("detected-face-serial.dat");
+    std::ifstream name_file("detected-face-names-serial.dat");
+
+    if(TD_file.good() && name_file.good()) {
+        try{
+            deserialize("detected-face-serial.dat") >> detected_temp_descriptors;
+            deserialize("detected-face-names-serial.dat") >> detected_names;
+        }catch(...){
+
+        }
+    }
+
+    qDebug() << "Is lam " << detected_temp_descriptors.size() << " " << detected_names.size();
+
+}
+
+void MainWindow::faceDesFromWark(std::vector<dlib::matrix<float,(long)0,(long)1>> faceDescriptor)
+{
+    QStringList list;
+    qDebug() << "Size of faceDes " << faceDescriptor.size() << " " << detected_temp_descriptors.size();
+    for (size_t i = 0; i < faceDescriptor.size(); ++i){
+        //            double mn=100.0; int mtch=-1;
+        for (size_t j = 0; j < detected_temp_descriptors.size(); ++j){
+            //                mn = length(face_descriptors[i]-dir_template_descriptors[j]);
+            //qDebug() << "Allah";
+            double diff = length(faceDescriptor[i]-detected_temp_descriptors[j]);
+            if (diff < 0.45){
+                std::string path = detected_names[j+j+1];
+                list.append(QString::fromStdString(path));
+            }
+        }
+    }
+    emit goSBI(list);
+}
+
+void MainWindow::fromSearchByImgtoMain(QString face)
+{
+    warker->detectFaceFromImage(face);
+}
+
+void MainWindow::make_notification_for_unique_face(QPixmap pic, QString name, int cam, int clusterId, int timesOfSameImg, double confidence)
+{
+    //qDebug()<<"make notification for unique face call "<<++countr;
+
+    QString camer = QString::number(cam);
+    QString clstrId = QString::number(clusterId);
+    QString timesImg = QString::number(timesOfSameImg);
+
+    faceUniq *u_newNot= new faceUniq(pic, name, camer, clstrId, timesImg, confidence, this);
+    //uniq_face_window->u_addNot(u_newNot);
+    connect(u_newNot, SIGNAL(emt_uniq_fce(QPixmap)), configdb, SLOT(showFaceToConfigDB(QPixmap)));
+
+    uniq_face_window->u_addNot(clstrId, u_newNot);// uniquefacewidget class instance of uniq_face_window
+    uniq_face_window->setVisible(true);
+    notOn= true;
+}
+
+void MainWindow::getDispRowsColumns(int row, int col)
+{
+    //        row = 3; col = 3;
+
+    int x = wid/4+2;
+    int y = menubar_height+33;
+    int w = wid/2;
+    int h = hei/2;
+    qDebug() << "Finally =========== " << x << ", " << y << ", " << w << ", " << h;
+    int tot_width = w-x;
+    int tot_height = h-y;
+    //    int tot_width = w;
+    //    int tot_height = h;
+
+    //    int add_wid;
+    //    int add_col;
+    //    if(row<col){
+    //        add_wid = w/col;
+    //        add_col = h;
+    //    }else if(row>col){
+    //        add_wid = w;
+    //        add_col = h/row;
+    //    }else{
+    //        add_wid = w/row;
+    //        add_col = h/col;
+    //    }
+    //    while(x <= w && y <= h){
+
+    //    }
+    //qDebug() << "Total w and h " << tot_width << ", " << tot_height;
+    //    int a1, a2, b1, b2, c1, c2, d1, d2;
+    //    a1 = x; a2 = y;
+    //    b1 = w; b2 = y;
+    //    c1 = x; c2 = h;
+    //    d1 = w; d2 = h;
+
+    //    int single_width = tot_width/col;
+    //    int single_column = tot_height/row;
+    int single_width = w/col;
+    int single_column = h/row;
+    //single_column -= y;
+    qDebug() << "Single wid and col = " << single_width << ", " << single_column;
+
+
+    //        for(int i = x; i <= w; i+=single_width){
+    //            qDebug() << "width = " << i;
+    //        }
+    //        for(int i = y; i <= h; i+=single_column){
+    //            qDebug() << "height = " << i;
+    //        }
+
+    //        for(int i = y; i <= h; i+=single_column){
+    //            for(int j = x; j <= w; j+=single_width){
+    //                cout <<j<<","<<i << " ";
+    //            }
+    //            cout << "\n";
+    //        }
+
+    QVector<QVector<QPair<int, int>> > vect;
+    int x_, y_;
+    x_ = x;
+    y_ = y;
+    for(int i = 0; i <= row; i++){
+        QVector<QPair<int, int>> vt;
+        for(int j = 0; j <= col; j++){
+            //            qDebug() << "Rajshahi " << x_ << " " << y_;
+            vt.push_back(qMakePair(x_, y_));
+            x_ += single_width;
+        }
+        x_ = x;
+        y_ += single_column;
+        vect.push_back(vt);
+    }
+
+    for(int i = 1; i < vect.size(); i++){
+        for(int j = 1; j < vect[i].size(); j++){
+            cout << "00 = "<<vect[i-1][j-1].first<<","<<vect[i-1][j-1].second <<" "
+                                                                             << "01 = "<<vect[i-1][j].first<<","<<vect[i-1][j].second <<" "
+                                                                             << "10 = "<<vect[i][j-1].first<<","<<vect[i][j-1].second <<" "
+                                                                             << "11 = "<<vect[i][j].first<<","<<vect[i][j].second << endl;
+            //watchcam::rectangle rect(vect[i-1][j-1].first,vect[i-1][j].second,vect[i][j-1].second,vect[i][j].first);
+
+            watchcam::rectangle rect(vect[i-1][j-1].first,vect[i-1][j].second,single_width,single_column);
+            rects.push_back(rect);
+        }
+        cout << endl;
+    }
+
+    //    qDebug() << "watchcam::rectangle rect(1,2,3,4)";
+    //    for(int i = 0; i < rects.size(); i++){
+    //        qDebug() << rects[i].left;
+    //    }
+
+
+
+    //    for(int i = x; i <= w; i+=single_width){
+    //        for (int j = y; j <= h; j+=single_column){
+    //            qDebug() << "Index = " <<i<<" "<<j;
+    //        }
+    //    }
+
+
+    //    Display* display1 = XOpenDisplay(NULL);
+
+    //    XSynchronize(display1, True);
+
+    //    Window x11root = XDefaultRootWindow(display1);
+
+    //    int x1 = 500;
+    //    int y1 = 500;
+    //    unsigned int width = 721;
+    //    unsigned int height = 461;
+
+    //    unsigned int borderWidth = 0;
+    //    long colorBlue = 0xff0000ff;
+
+    //    Window x11w = XCreateSimpleWindow(display1, x11root, x1, y1,
+    //                                      width, height, borderWidth, 1 /*magic number*/, colorBlue);
+
+    //    XReparentWindow(display1, x11w, staticO->winId(), (staticO->wid/4), staticO->hei/4);
+    //    //XReparentWindow(display, x11w, staticO->winId(), (0), staticO->menubar_height+8);
+    //    XMapWindow(display1, x11w);
+
+
+}
+
+void MainWindow::addToAddFace(QString name, QString image_path)
+{
+    if(connectionDB()){
+        QSqlQuery queryt; // sql query execution object
+
+        QString create_table_query =
+                "create table ADD_FACE ( "
+                "ID INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "name TEXT not null UNIQUE, "
+                "position TEXT, "
+                "address TEXT, "
+                "phone TEXT, "
+                "access_pass TEXT, "
+                "image_path TEXT not null"
+                ");"
+                ;
+
+        if(queryt.exec(create_table_query)){
+            qDebug() << "Table Created";
+        }else {
+            qDebug() << "Table Created failed";
+        }
+
+        QSqlQuery query;
+        query.prepare("INSERT INTO ADD_FACE (name, position, address, phone, access_pass, image_path) VALUES (?,?,?,?,?,?);");
+        query.addBindValue(name);
+        query.addBindValue("");
+        query.addBindValue("");
+        query.addBindValue("");
+        query.addBindValue("");
+        query.addBindValue(image_path);
+
+        if(query.exec()){ // Successfully executed then show pop up message box
+            qDebug() << "Inserted "<< endl;
+            //        QMessageBox msg_box;
+            //        msg_box.setText("Successfully Inserted");
+            //        msg_box.exec();
+        }else {
+            qDebug() << "Not inserted!" << endl;
+            //        QMessageBox msg_box;
+            //        msg_box.setText("Cant inserted!");
+            //        msg_box.exec();
+        }
+    }
+}
+
+/* control all Notification related Tasks */
+void MainWindow::NotificationManager()
+{
+    //connect(newFeed2, SIGNAL(addlpNotMan(QPixmap, QString, int)),this, SIGNAL(emitLP(QPixmap, QString, int)));
+
+    /* for tiles show faces window tab connecton [ temporary now, go to on_tileButton_clicked] */
+    //connect(this, SIGNAL(addFrNotMan(QPixmap, QString, int)), facesWindow, SLOT(addFR(QPixmap, QString, int)));
+
+    connect(this, SIGNAL(notifyFaceNotMan(QPixmap, QString, int, int, int)), this, SLOT(makeNotification(QPixmap, QString, int, int, int)));
+
+    /* for unique face tile [ temporay now, go to on_tileButton_clicked] */
+    //connect(this, SIGNAL(addUniqeFaceNotMan(QPixmap, QString, int, dlib::matrix<float,(long)0,(long)1>)), facesWindow, SLOT(addUniqueFace(QPixmap, QString, int, dlib::matrix<float,(long)0,(long)1>)));
+
+    /* for face notification show right bar[ temporay now, go to on_tileButton_clicked] */
+    // connect(facesWindow, SIGNAL(notifyFaceFromUniqueFace(QPixmap, QString, int, int, int)), this, SLOT(makeNotification(QPixmap, QString, int, int, int)));
+
+    qDebug()<<"notification manager functio call test ok ";
+}
+
+int MainWindow::getLastDBId(){
+    if(connectionDB()){
+        QString qu_s =
+                "select Id from FeedAddFace where "
+                "Id in (select max(Id) from FeedAddFace);"
+                ;
+        QSqlQuery qu;
+        if(qu.exec(qu_s)){
+            while(qu.next()){
+                int id = qu.value(0).toInt();
+                check_last_id = id;
+            }
+        }
+    }
+
+    return check_last_id;
+}
+
+void MainWindow::emitFunction(cv::Mat foo)
+{
+    emit emitDSFace(foo.clone(), 5);
+}
+
+void MainWindow::setSearchFaceOn()
+{
+    ui->searchFaceButton->setStyleSheet(myStyles::searchOn);
+}
+
+void MainWindow::setSearchObjectOn()
+{
+    //  ui->searchFaceButton->setStyleSheet(myStyles::defaultStyle);
+    ui->searchObjectButton->setText("Searching");
+}
+
+void MainWindow::setSearchFaceOff()
+{
+    //  ui->searchObjectButton->setStyleSheet(myStyles::searchOn);
+    ui->searchObjectButton->setText("Search OFF");
+}
+
+void MainWindow::setSearchObjectOff()
+{
+    ui->searchObjectButton->setStyleSheet(myStyles::defaultStyle);
+}
+
+void MainWindow::on_searchFaceButton_clicked()
+{
+    QString tempF = ui->faceLineEdit->text();
+    if(!tempF.isEmpty()){
+        //  ui->startButton->setStyleSheet("background-color: rgba(255, 0, 0, 150);")
+        searchFOn = !searchFOn;
+        if(searchFOn)
+        {
+            // setSearchObjectOn();
+            ui->searchFaceButton->setText("Searching Face ...");
+            //ui->searchObjectButton->setT;
+            //this->setStyleSheet("MainWindow{background-color:green}");
+            ui->searchFaceButton->setStyleSheet("background-color: rgba(255, 0, 0, 150);");
+            blink_timer_search_by_name->start(1000);
+        }
+        else
+        {
+            // ui->searchObjectButton->setStyleSheet(myStyles::defaultStyle);
+            // setSearchObjectOff();
+            ui->searchFaceButton->setText("Search Face OFF");
+            //  this->setStyleSheet("MainWindow{background-color:red}");
+            ui->searchFaceButton->setStyleSheet("background-color: rgb(0, 0, 0);");
+            // found = false;
+            blink_timer_search_by_name->stop();
+            blink_check_by_name = false;
+            frame_search_by_name->close();
+        }
+    }
+
+
+
+    //    for(int i=0; i<feeds.size(); i++)
+    //    {
+    //        feeds[i]->search_requested(tempF,-1,"");
+    //    }
+
+}
+
+void MainWindow::on_searchLPRbutton_clicked()
+{
+    LPR = ui->LPRlineEdit->text();
+    QString srch = ">>>>>>>>> Search LPR requested <<<<<<<<<<";
+    qDebug(qUtf8Printable(srch));
+    qDebug(qUtf8Printable(LPR));
+    searchLPRon = !searchLPRon;
+    if(searchLPRon)
+    {
+        // setSearchObjectOn();
+        //  ui->searchFaceButton->setText("Searching Face ...");
+        //ui->searchObjectButton->setT;
+        // this->setStyleSheet("MainWindow{background-color:green}");
+        ui->searchLPRbutton->setStyleSheet("background-color: rgba(255, 0, 0, 150);");
+
+
+    }
+    else
+    {
+        // ui->searchObjectButton->setStyleSheet(myStyles::defaultStyle);
+        // setSearchObjectOff();
+        // ui->searchFaceButton->setText("Search Face OFF");
+        //  this->setStyleSheet("MainWindow{background-color:red}");
+        ui->searchLPRbutton->setStyleSheet("background-color: rgb(0, 0, 0);");
+        // found = false;
+        QString fuck = "fcuk";
+        LPR = fuck;
+    }
+
+
+
+}
+
+void MainWindow::on_searchObjectButton_clicked()
+{
+    //    QString object = myStyles::objects.at(ui->objectCombo->currentIndex());
+    QString object = ui->objectCombo->currentText();
+    //    qDebug() << "Object ======== " << object;
+    //    int color = myStyles::colorValues.at(ui->colorCombo->currentIndex()-1);
+    if(!QString::compare(object, "None") == 0){
+        //        QString srch = ">>>>>>>>> Search requested <<<<<<<<<<";
+        //        qDebug(qUtf8Printable(srch));
+        //        qDebug(qUtf8Printable(object));
+        //        qDebug(qUtf8Printable(QString::number(color)));
+
+        searchOn = !searchOn;
+        if(searchOn)
+        {
+            // setSearchObjectOn();
+            ui->searchObjectButton->setText("Searching ...");
+            //ui->searchObjectButton->setT;
+            // this->setStyleSheet("MainWindow{background-color:green}");
+            ui->searchObjectButton->setStyleSheet("background-color: rgba(255, 0, 0, 150);");
+
+            //        blink_check_from_ui = true;
+            //qDebug() << "Splash window";
+            blink_timer->start(1000);// 5 second
+
+
+
+        }
+
+        else
+        {
+            // ui->searchObjectButton->setStyleSheet(myStyles::defaultStyle);
+            // setSearchObjectOff();
+            ui->searchObjectButton->setText("Search Object");
+            //  this->setStyleSheet("MainWindow{background-color:red}");
+            ui->searchObjectButton->setStyleSheet("background-color:white;");
+            // found = false;
+            //blink_check_from_ui = false;
+            blink_timer->stop();
+            blink_check = false;
+            frame->close();
+
+        }
+    }
+    //    for(int i=0; i<feeds.size(); i++)
+    //    {
+    //        feeds[i]->search_requested("",color,object);
+    //    }
+
+}
+void MainWindow::on_startButton_pressed()
+{
+    if(!running){
+
+        //        manager->get(QNetworkRequest(QUrl("http://www.sigmindai.net/wc-surv/wc-surv.php?passkey=secret-wc")));
+
+        //        ui->startButton->setText("Checking..");
+        //        ui->startButton->setStyleSheet("background-color: rgb(170, 255, 127);");
+        //        //start camera
+
+        ////        cam = new Camera(ui->linkLine->text().toStdString().c_str());
+        ////        cam->moveToThread(thread);
+
+        //        connect(cam, SIGNAL(ui_go(cv::Mat, cv::Mat, std::vector< watchcam::rectangle >)), this,
+        //               SLOT(update_ui(cv::Mat, cv::Mat, std::vector< watchcam::rectangle >)));
+        //        connect(cam, SIGNAL(start_requested()), thread, SLOT(start()));
+        //        connect(thread, SIGNAL(started()), cam, SLOT(go()));
+        //        cam->start();
+
+        //        ui->menuBar->setDisabled(false);
+        //       // ui->actionFootage_analysis->setDisabled(false);
+        //        ui->scrollArea->setDisabled(false);
+        running = true;
+
+    }
+    else {
+        ui->startButton->setText("Invalid");
+
+        // ui->startButton->setDisabled(true);
+
+        //close camera
+        //  ui->menuBar->setDisabled(true);   // Uncomment for trial
+        // ui->actionFootage_analysis->setDisabled(true);
+        //   ui->scrollArea->setDisabled(true);  // Uncomment for trial
+        running = false;
+    }
+}
+
+void MainWindow::notificationSLot(bool)
+{
+    if(!notOn){
+        //nots->setVisible(true);
+        notOn= true;
+    }
+    else {
+        //nots->setVisible(false);
+        notOn= false;
+    }
+}
+
+void MainWindow::makeNotification(QPixmap pic, QString name, int cam, int clusterId, int timesOfSameImg, double confidence)
+{
+    qDebug()<<"makenotface function call ";
+
+    //    Notification *newNoti= new Notification(name, "", QString::number(cam), pic.scaledToHeight(140), QString::number(clusterId), QString::number(timesOfSameImg));
+    //    emailController->addNot(newNoti);
+
+    QString camer = QString::number(cam);
+    QString clstrId = QString::number(clusterId);
+    QString timesImg = QString::number(timesOfSameImg);
+
+    Not *newNot= new Not(pic, name, camer, clstrId, timesImg, confidence, this);
+    //nots->addNot(newNot);
+
+    nots->addNot(clstrId, newNot);// notWidget class instance of nots
+    //    nots->setVisible(true);
+    notOn= true;
+}
+
+void MainWindow::addNotToBar(Notification *noti)
+{
+    qDebug()<<"facenotbar"<<" faceType = "<<noti->name;
+    //Not *newNot= new Not(noti->pic, noti->name, noti->cam, noti->clusterId, noti->timesOfSameImg, this);
+    //nots->addNot(newNot);
+    //    QString clstr = noti->clusterId;
+    //    delete noti;
+    //    nots->addNot(clstr, newNot);// notWidget class instance of nots
+    //    nots->setVisible(true);
+    //    notOn= true;
+
+}
+
+void MainWindow::setNotPosition()
+{
+    int y= ui->menuBar->geometry().y();//+ 20;
+    //   int y= this->height()-980;
+    int x= this->width()/*-402*/;
+    qDebug() << "x = " << x << " " << " y = " << y;
+    nots->move(this->wid/4+this->wid/2+5,this->menubar_height+8);
+    nots->setFixedWidth((this->wid) - (this->wid/4+this->wid/2)+10);
+    nots->setFixedHeight(this->hei-88);
+
+    lpnots->move(0,this->menubar_height+8);
+    lpnots->setFixedWidth((this->wid) - (this->wid/4+this->wid/2)+10);
+    lpnots->setFixedHeight(this->hei-88);
+}
+
+int MainWindow::widthCal()
+{
+    //qDebug() << flowLayout->geometry().width();
+    int rem = (flowLayout->geometry().width())%(myStyles::minWidth);
+    int res = (flowLayout->geometry().width())/(myStyles::minWidth);
+    if(rem)
+    {
+        //qDebug() << "hey " << (res+1);
+        return (flowLayout->geometry().width()-1)/(res+1);
+    }
+    else
+    {
+        //qDebug() << "res" << res;
+        return (myStyles::minWidth-1);
+    }
+}
+
+void MainWindow::setSizes(int width)
+{
+    int height= (width*9)/16;
+    myStyles::runningFeedWidth = width;
+    myStyles::runningFeedHeight = height;
+
+    //qDebug() << "inside sizes " << width;
+    for(int i=0;i<feeds.size();i++){
+        feeds[i]->setSizes(width, height);
+    }
+}
+
+void MainWindow::on_actionAdd_Camera_triggered()
+{
+    //    Feed *newFeed= new Feed(cam_count++,myStyles::runningFeedWidth,myStyles::runningFeedHeight, darknet_mutex, templates_names, template_descriptors, this);
+    //    newFeed->set_blacklist_descriptor(blacklist_descriptors);
+
+    //    feeds.push_back(newFeed);
+    //    connect(newFeed, SIGNAL(emitFace(QPixmap , QString, int)), this, SLOT(addFace_triggered(QPixmap,QString,int)));
+    //    connect(newFeed, SIGNAL(emitLP(QPixmap, int)), this, SLOT(addLPR_triggered(QPixmap, int)));
+    //    connect(newFeed, SIGNAL(emitTile(QPixmap,QString,int)), this, SLOT(addObject(QPixmap,QString,int)));
+    //    //connect(newFeed, SIGNAL(emitLP(QPixmap,QString,int)), this, SLOT(addObject(QPixmap,QString,int)));
+    //    connect(newFeed, SIGNAL(notify(QPixmap,QString,int)), this, SLOT(makeNotification(QPixmap,QString,int)));
+
+    //    //flowLayout->addWidget(newFeed);
+    //    flowLayout->addWidget(newFeed);
+
+    //    //qDebug() << ui->scrollAreaWidgetContents->geometry().height() << endl;
+
+    //    setSizes(widthCal());
+    //    thread = new QThread();
+    //    worker = new Worker();
+
+    //worker->moveToThread(thread);
+
+    //connect(worker, SIGNAL(workRequested()), thread, SLOT(start()));
+
+    //  connect(thread, SIGNAL(started()), worker, SLOT(doWork(int)));
+    //connect(this, SIGNAL(requestUpdateLPR(QPixmap,QString,int)), worker, SLOT(doWork(QPixmap,QString,int)));
+    //connect(worker, SIGNAL(valueChanged(QPixmap,QString,int)), this, SLOT(addLP(QPixmap,QString,int)));
+    //connect(worker, SIGNAL(finishedLPR()), thread, SLOT(quit()), Qt::DirectConnection);
+
+
+    //    FRthread = new QThread();
+    //    warker = new Warker();
+
+    //    warker->moveToThread(FRthread);
+    //   // warker->setup(templates_names, template_descriptors);
+    //  //  connect(this,SIGNAL(load_template()), warker, SLOT(receive_template()));
+
+    //   //  load_faces();
+    //    connect(warker, SIGNAL(warkRequested()), FRthread, SLOT(start()));
+
+    //  //  connect(thread, SIGNAL(started()), worker, SLOT(doWork(int)));
+    //    connect(this, SIGNAL(requestUpdateFR(cv::Mat,QString,int)), warker, SLOT(doWark(cv::Mat,QString,int)));
+    //   //connect(this, SIGNAL(requestUpdateLPR(QPixmap,QString,int)), this, SLOT(valueChanged(QPixmap,QString,int));
+    //          //  connect(worker,SIGNAL(valueChangedLPR(QString)), this, SLOT()
+
+    //   // connect(worker,SIGNAL(valueChangedLPR(QString)), this, SLOT(valueChanged(QPixmap,QString,int)));
+    //      connect(warker, SIGNAL(valueFRChanged(QPixmap,QString,int,matrix<float,0,1>)), this, SLOT(addFR(QPixmap,QString,int,matrix<float,0,1>)));
+    //    connect(warker, SIGNAL(finishedFR()), FRthread, SLOT(quit()), Qt::DirectConnection);
+
+
+}
+
+void MainWindow::replyFinished(QNetworkReply *rep){
+    //    if(rep->readAll() == "ok") {
+    //        qDebug() << "valid";
+
+    //        trialTimer= new QTimer(this);
+    //        connect(trialTimer, SIGNAL(timeout()), this, SLOT(trialCheck()));
+    //        trialTimer->start(300000);
+
+    //        manager = new QNetworkAccessManager(this);
+
+    //        connect(manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(replyFinishedOnline(QNetworkReply*)));
+    //    }
+    //    else {
+    //        qDebug() << rep->readAll();
+    //        qDebug() << "error trial starting";
+    //        ui->startButton->setDisabled(true);
+    //        expireDialog *expire = new expireDialog;
+    //        expire->setAttribute( Qt::WA_DeleteOnClose );   // Uncomment for trial
+    //        expire->show();
+    //        this->close();
+    //    }
+
+
+}
+
+void MainWindow::replyFinishedOnline(QNetworkReply *rep){
+    if(rep->readAll() == "ok") {
+        //        qDebug() << "valid";
+
+    }
+
+    else {
+        //        trialTimer->stop();
+        //        ui->startButton->setDisabled(false);
+        //        expireDialog *expire = new expireDialog;
+        //        expire->setAttribute( Qt::WA_DeleteOnClose );
+        //        expire->show();
+
+        //        this->close();
+    }
+
+
+}
+
+void MainWindow::trialCheck(){
+    // manager->get(QNetworkRequest(QUrl("http://www.sigmindai.net/wc-surv/wc-surv.php?passkey=secret-wc")));
+
+}
+
+void MainWindow::disagreed(){
+    ui->startButton->setDisabled(true);
+    ui->actionAdd_Camera->setDisabled(true);
+    ui->actionFootage_analysis->setDisabled(true);
+    ui->scrollArea->setDisabled(true);
+    this->close();
+}
+
+void MainWindow::agreed(){
+
+    ui->startButton->setDisabled(false);
+    ui->startButton->setDisabled(false);
+    ui->actionAdd_Camera->setDisabled(false);
+    ui->actionFootage_analysis->setDisabled(false);
+    ui->scrollArea->setDisabled(false);
+    //ui->actionAdd_Camera->setDisabled(false);
+
+}
+
+void MainWindow::on_startButton_released()
+{
+    if(running){
+        ui->startButton->setText("BHTPA-JT");
+        ui->startButton->setStyleSheet("background-color: rgba(255, 0, 0, 150);");
+
+        ui->startButton->setDisabled(false);
+    }
+    else{
+        ui->startButton->setText("Check");
+        ui->startButton->setStyleSheet("background-color: rgb(170, 255, 127);");
+    }
+}
+
+void MainWindow::resizeEvent(QResizeEvent *e)
+{
+    setSizes(widthCal());
+    setNotPosition();
+
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+    if(notOn){
+        if(!nots->geometry().contains(event->pos())) {
+            //nots->setVisible(false);
+            notOn=false;
+        }
+    }
+}
+
+void MainWindow::on_actionShow_Faces_triggered()
+{
+    //facesWindow = new Faces(this);
+    //facesWindow->setAttribute( Qt::WA_DeleteOnClose , true);
+    facesWindow->show();
+
+}
+
+void MainWindow::on_actionAdd_face_triggered()
+{
+
+    //facesWindow->show();
+}
+
+void MainWindow::addFace_triggered(cv::Mat pic, int indx)
+{
+    QString enc = "receive Face";
+
+    //       facesWindow->addFR(pic, enc, indx);
+
+    qDebug() << " Inside addFace_triggered";
+    // warker->requestWark();
+
+    // emit requestUpdateFR(pic, enc, indx);
+
+}
+
+void MainWindow::fromDsToMain(cv::Mat pic, int n, double fps_val, std::vector< watchcam::rectangle > ds_rects, int type)
+{
+    qDebug() << "fromDsToMain" << endl;
+
+    // cv::Mat picu=cv::imread("/home/sigmind/xhuv.png");
+    //double fpsv = static_cast<MainWindow> (fps_val);
+
+    if(type == 0){ // found face
+        staticO->DSaddFace_triggered(pic, n, 1, ds_rects);
+    }else if (type == 1) { // found lpr
+        staticO->DSaddLPR_triggered(pic, n, 1, ds_rects);
+    }
+
+
+    // picu.release();
+
+    //qDebug() << "staticO -> " << staticO << endl;
+    //pic.release();
+
+    // delete pic;
+}
+
+void MainWindow::dowarkStarted(){
+
+    //    QString stor;
+    //    float FRThreshold = myStyles::faceSensitivityValue;
+    //    if(FRThreshold > 1.0){
+    //        FRThreshold = FRThreshold/100;
+    //        stor = QString::number(FRThreshold, 'f', 2);// take 2 digit after decimal point
+    //        FRThreshold = stor.toFloat();
+    //        //or,
+    //        //FRThreshold = (QString::number(FRThreshold, 'f', 2).toFloat());// take 2 digit after decimal point
+    //    }
+    //    // qDebug()<<"dowarkStarted faceSensitivityValue :"<<FRThreshold;
+
+    qDebug() << "dlslsssssssssssssssssssssss===============================++++++ "+warker->name_b;
+    qDebug() << "Main Thread Id dowarkstarted = " << this->QObject::thread()->currentThreadId();
+
+    QPixmap pict =  QPixmap::fromImage(QImage((unsigned char*) warker->pic_b.data, warker->pic_b.cols, warker->pic_b.rows, QImage::Format_RGB888));
+    //facesWindow->addFR(pict, "face", 2);
+
+
+    //qDebug()<<"dowarkStarted faceSensitivityValue :"<<FRThreshold;
+    emit requestUpdateFR(warker->pic_b,warker->name_b, warker->indx_b, FRThreshold, warker->fps_vlue, suspect_state);
+}
+
+void MainWindow::dbSyncDowark()
+{
+    qDebug()<<"dbSyncDowark conter "<<++counter;
+    emit requestDoWark(++check_last_id, sync_var->pic_s, sync_var->name_s, sync_var->index_s, sync_var->confidence_s);
+}
+
+void MainWindow::callAddToDb(int Id, QPixmap pic, QString str, int indx, double confidence,
+                             QString date_time, int sync_states, QString date, QString img_name, QString image_path, int rec){
+    qDebug() << "Befor add to db cntt2 "<<++cntt2;
+    addToDB(Id, pic, str, indx, confidence, date_time, sync_states, date, img_name, image_path, rec);
+    qDebug() << "after add to db\n";
+
+
+
+}
+
+void MainWindow::syncChecker(){
+    if(connectionDB()){
+        QSqlQuery query;
+        QString qu =
+                "select Id, name, savePath, date_time, confidence, video_src, states, rec_check from FeedAddFace where states=?;"
+                ;
+        query.prepare(qu);
+        query.addBindValue(0);
+        if(query.exec()){
+            while(query.next()){
+                //                qDebug() << "Id = " << query.value(0).toInt();
+                int idc = query.value(0).toInt();
+                QString namec = query.value(1).toString();
+                QString save_pathc = query.value(2).toString();
+                QString date_timec = query.value(3).toString();
+                double con = query.value(4).toDouble();
+                int video_srcc = query.value(5).toInt();
+                int statesc = query.value(6).toInt();
+                int rec_check_or_not = query.value(7).toInt();
+
+                this->idc = idc;
+                this->namec = namec;
+                this->save_pathc = save_pathc;
+                this->date_timec = date_timec;
+                this->con = con;
+                this->video_srcc = video_srcc;
+                this->statesc = statesc;
+                rec_check = rec_check_or_not;
+
+                sync_ch->requestWorkSyChT();
+            }
+        }
+    }
+}
+
+void MainWindow::syncChCallDoWark(){
+    qDebug() << this->idc << " " << this->namec << " " << this->date_timec << " " << this->video_srcc;
+    emit data_transfer_to_syncDowark(this->idc, this->namec, this->save_pathc, this->date_timec, this->con,
+                                     this->video_srcc, this->statesc, rec_check);
+}
+
+void MainWindow::updateFeedAddFace(int id){
+    if(connectionDB()){
+        QString str =
+                "update FeedAddFace set states = ? where id = ?;"
+                ;
+        QSqlQuery qu;
+        qu.prepare(str);
+        qu.addBindValue(1);
+        qu.addBindValue(id);
+        if(qu.exec()){
+            qDebug() << "Update Done!";
+        }
+    }
+}
+
+void MainWindow::DSaddFace_triggered(cv::Mat pic, int indx, double fps_val, std::vector< watchcam::rectangle > ds_rects)
+{
+    for(int i = 0; i < ds_rects.size(); i++){
+        source_and_object.first = indx;
+        source_and_object.second = ds_rects[i].type;
+    }
+
+    //ds_rects.clear();
+    // qDebug() << "DDDDDD======" << rects[0].left<<","<<rects[0].top<<","<<rects[0].right<<","<<rects[0].bot;
+
+    //    // Set a solid green thick border.
+    //    const QRect *rect = new QRect();
+    //    rect->setCoords(93, 343, 232, 513);
+    //    frame->setGeometry(683, 279, 341, 186);
+    //    frame->setGeometry(rect);
+    //frame->setGeometry(683-343, 372-93, 341, 186);    // Just some fixed values to test
+    // Set a solid green thick border.
+
+
+    //    if(iix==0){
+    //        frame->setGeometry(rects[0].left, rects[0].top, rects[0].right, rects[0].bot);
+    //        frame->show();
+    //    }
+    //    iix++;
+    //    if(blink_check == false){
+    //        blink_check = true;
+    //    }else{
+    //        blink_check = false;
+    //    }
+    //    if(blink_check == true){
+    //        frame->setGeometry(rects[0].left, rects[0].top, rects[0].right, rects[0].bot);    // Just some fixed values to test
+    //        frame->show();
+    //    }else{
+    //        frame->close();
+    //    }
+
+    qDebug() << "FPS+++++++++++ " << fps_val<<" convert int "<<(int)fps_val;
+
+    QString enc = "receive Face";
+    warker->pic_b = pic;
+    warker->name_b = enc;
+    warker->indx_b = indx;
+    warker->fps_vlue = (int)fps_val;
+
+    qDebug() << " DSaddFace_triggered Basedul isalm \n";
+    //qDebug() << "DS object name = " << this->metaObject()->className() << endl;
+
+    //       facesWindow->addFR(pic, enc, indx);
+    //qDebug() << "Main Thread Id = " << thread()->currentThreadId();
+    //this->pic = pic; this->enc = enc; this->indx = indx;
+
+    //warker->abort();
+    warker->requestWark();
+
+
+    // cv::Mat spirit = cv::imread("/home/sigmind/xhuv.png");
+
+    //emit requestUpdateFR(pic,enc, indx);
+    //warker->doWark(pic,enc, indx);
+    //spirit.release();
+    //  pic.release();
+
+}
+void MainWindow::DSaddLPR_triggered(cv::Mat pic, int indx, double fps_val, std::vector< watchcam::rectangle > ds_rects){
+    //    qDebug() << "DSaddLPR_triggered";
+    for(int i = 0; i < ds_rects.size(); i++){
+        source_and_object.first = indx;
+        source_and_object.second = ds_rects[i].type;
+    }
+    QPixmap pict =  QPixmap::fromImage(QImage((unsigned char*) pic.data, pic.cols, pic.rows, QImage::Format_RGB888));
+    worker->pi = pict;
+    worker->s = "lpr";
+    worker->ind = indx;
+
+    worker->requestWork();
+}
+
+
+QString MainWindow::encodeString(QString data)
+{
+    QByteArray string = data.toUtf8();
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    QString encodedString = codec->toUnicode(string);
+    int l = encodedString.length();
+
+    //    qDebug()<<"l = "<<l<<" encodedString = "<<encodedString;
+
+    //    int len = d.length();
+    //qDebug()<<"string = "<<d<<" length = "<<len;
+    for(int i=0;i<l;i++){
+        if(encodedString[i] == "\u09e6")
+        {
+            encodedString[i] = '0';/*
+                qDebug()<<encodedString[i]<<" "<<"0";*/
+        }
+
+
+        else if(encodedString[i] == "\u09e7")
+        {
+            encodedString[i] = '1';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"1";
+
+        else if(encodedString[i] == "\u09e8")
+        {
+            encodedString[i] = '2';
+        }
+        // qDebug()<<encodedString[i]<<" "<<"2";
+
+        else if(encodedString[i] == "\u09e9")
+        {
+            encodedString[i] = '3';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"3";
+
+        else if(encodedString[i] == "\u09ea")
+        {
+            encodedString[i] = '4';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"4";
+
+        else if(encodedString[i] == "\u09eb")
+        {
+            encodedString[i] = '5';
+        }
+        // qDebug()<<encodedString[i]<<" "<<"5";
+
+        else if(encodedString[i] == "\u09ec")
+        {
+            encodedString[i] = '6';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"6";
+
+        else if(encodedString[i] == "\u09ed")
+        {
+            encodedString[i] = '7';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"7";
+
+        else if(encodedString[i] == "\u09ee")
+        {
+            encodedString[i] = '8';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"8";
+
+        else if(encodedString[i] == "\u09ef")
+        {
+            encodedString[i] = '9';
+        }
+        //qDebug()<<encodedString[i]<<" "<<"9";
+        //        else {
+        //            qDebug()<<encodedString[i];
+        //        }
+
+    }
+    return encodedString;
+}
+
+
+
+
+
+
+void MainWindow::addLPR_triggered(QPixmap pic, int indx)
+{
+    // worker->abort();
+    //thread->wait(); // If the thread is not running, this will immediately return.
+    QString enc = "receive tileLP";
+    //    worker->requestWork();
+
+    //    emit requestUpdateLPR(pic, enc, indx);
+    // QString trig = "Add LPR triggered";
+    // facesWindow->addLPR(pic, trig, indx);
+}
+
+void MainWindow::addFR(QPixmap pic, QString str, int indx, double confidence, dlib::matrix<float,(long)0,(long)1> pic_template, int fpsValue, int rec_or_not)
+{
+    name_and_source.first = str;
+    name_and_source.second = indx;
+    qDebug() << "Basedul islam cntt ++++++++++++++++++++++++++++++++++++++++++++++===================" <<++cntt<< endl;
+    //accessPassCustomizetion(str, indx);
+
+    //std::string faceData = str.toStdString();
+    //std::string susu = "sush";
+    //    if(faceData.find(susu) != std::string::npos) {
+    //        //makeNotification(pic, qstr, indx);
+    //        emit notifyFace(pic, str, indx);
+    //    }
+    //    else
+    //    {
+
+
+    //facesWindow->addUniqueFace(pic,str,indx,face_descriptor);
+
+    //  if(indx) {
+    //    emit notifyFace(pic, str, indx);
+    //emit notifyFaceNotMan(pic, str, indx, 0, 0);
+    //}
+
+    //emit addUniqeFaceNotMan(pic,str,indx,pic_template);
+    facesWindow->addUniqueFace(pic, str, indx, pic_template, confidence, fpsValue, rec_or_not);
+    // facesWindow->addFaceRecognized(pic, str, indx);// }
+
+    //qDebug() << "Befor add to db\n";
+    //addToDB(pic, str, indx, confidence);
+    //qDebug() << "after add to db\n";
+
+
+    sync_var->pic_s = pic;
+    sync_var->name_s = str;
+    sync_var->index_s = indx;
+    sync_var->confidence_s = confidence;
+    //emit requestDoWark(++check_last_id, sync_var->pic_s, sync_var->name_s, sync_var->index_s, sync_var->confidence_s);
+    //    sync_var->abortSyTh();
+    //    db_sync_th->wait();
+    //sync_var->requestWorkSyTh();
+
+
+
+
+
+    if(rec_or_not == 1){
+
+        QString face_path = "./captures/faces/";
+        QString obliq = "/";
+        // QString format = "dd.MM.yyyy";
+        QString date_time =  QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+        date_time = encodeString(date_time);
+        QString at = "<at>";
+        QString date = QDate::currentDate().toString("dd.MM.yyyy");
+        QString img_path = face_path+date+obliq;
+        //        QString image_name = img_path+str+at+".png";
+        QString image_name = img_path+str+at+QTime::currentTime().toString()+".png";
+        qDebug() << "Befor add to db\n";
+        loadDetectedFace();
+        detected_names.push_back((str+at+QTime::currentTime().toString()+".png").toStdString());
+        detected_names.push_back(image_name.toStdString());
+        detected_temp_descriptors.push_back(pic_template);
+        serialize("detected-face-serial.dat") << detected_temp_descriptors;
+        serialize("detected-face-names-serial.dat") << detected_names;
+        qDebug() << "Is lam " << detected_temp_descriptors.size() << " " << detected_names.size();
+        addToDB(++check_last_id, pic, str, indx, confidence, date_time, 0, date, img_path, image_name, rec_or_not);
+        qDebug() << "after add to db\n";
+
+    }else if(rec_or_not == 0){
+        qDebug()<<"suspect value "<<rec_or_not;
+
+        QString face_path = "./captures/Suspect_faces/";
+        QString obliq = "/";
+        // QString format = "dd.MM.yyyy";
+        QString date_time =  QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+        date_time = encodeString(date_time);
+        QString at = "<at>";
+        QString date = QDate::currentDate().toString("dd.MM.yyyy");
+        QString img_path = face_path+date+obliq;
+        //        QString image_name = img_path+str+at+".png";
+        QString image_name = img_path+str+at+QTime::currentTime().toString()+".png";
+
+        qDebug() << "Befor add to db\n";
+        loadDetectedFace();
+        detected_names.push_back((str+at+QTime::currentTime().toString()+".png").toStdString());
+        detected_names.push_back(image_name.toStdString());
+        detected_temp_descriptors.push_back(pic_template);
+        serialize("detected-face-serial.dat") << detected_temp_descriptors;
+        serialize("detected-face-names-serial.dat") << detected_names;
+        qDebug() << "Is lam " << detected_temp_descriptors.size() << " " << detected_names.size();
+        addToDB(++check_last_id, pic, str, indx, confidence, date_time, 0, date, img_path, image_name, rec_or_not);
+        qDebug() << "after add to db\n";
+    }
+
+    //show_face->addFr(pic);
+}
+
+void MainWindow::addLP(QPixmap first_pic, QString first_str, QPixmap second_pic, QString second_str)
+{
+//    QString sub_qstr = qstr.mid(qstr.length()-6, 6);
+    QRegExp re("\\d*");  // a digit (\d), zero or more times (*)
+
+//    if (re.exactMatch(second_str) == true){              // Check for last 6 digits
+//        if(second_str.length() == 6){
+//            qDebug() << "new space office = " << second_str;
+//        }
+//    }
+}
+void MainWindow::addLP(QPixmap pic, QString str, int indx)
+{
+
+    //    QSqlQuery qLp;
+    //    if (qLp.exec(
+    //                "CREATE TABLE LPR ( "
+    //                "Id int not null primary key autoincrement, "
+    //                "number_plate TEXT)"
+    //                "; "
+    //                )){
+    //        //qDebug()<< "Table created";
+    //    }
+
+    qDebug() << "addLP =============**************** " << str << " " << str.length() << " " << str.mid(0, str.indexOf("\n"));
+
+
+
+    QString trig = "Add LPR triggered";
+    std::stringstream plateStream;
+    std::wstring plateID = str.toStdWString().c_str();
+    int i=0;
+
+
+
+    for (auto &letter : plateID) {
+        if (letter == L'৮') {
+
+            plateStream << "8";
+        }
+        else if (letter == L'৩') {
+
+            plateStream << "3";
+        }
+        else if (letter == L'৭') {
+
+            plateStream << "7";
+        }
+        else if (letter == L'৭') {
+
+            plateStream << "7";
+        }
+        else if (letter == L'৬') {
+
+            plateStream << "6";
+        }
+        else if (letter == L'৯') {
+
+            plateStream << "9";
+        }
+        else if (letter == L'৫') {
+
+            plateStream << "5";
+        }
+        else if (letter == L'৪') {
+
+            plateStream << "4";
+        }
+        else if (letter == L'২') {
+
+            plateStream << "2";
+        }
+        else if (letter == L'১') {
+
+            plateStream << "1";
+        }
+        else if (letter == L'০') {
+
+            plateStream << "0";
+        }
+
+
+        else if (letter == L'ক') {
+
+            plateStream << "Ka-";
+        }
+        else if (letter == L'ঢ') {
+
+            plateStream << "Dha";
+        }
+        else if (letter == L'ম') {
+
+            plateStream << "Me";
+        }
+        else if (letter == L'ট') {
+
+            plateStream << "Tro-";
+        }
+        i++;
+    }
+    std::string plateData = plateStream.str();
+    QString lpr_path = "./captures/license_plates/";
+    QString date =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+    QString qstr = QString::fromStdString(plateData);
+
+    //    QByteArray encodedString = qstr.toUtf8(); // some ISO 8859-5 encoded text
+    //    QTextCodec *codec = QTextCodec::codecForName("ISO 8859-5");
+    //    QString string = codec->toUnicode(encodedString);
+    qDebug() << "LPR ==== ++++ "<< qstr;
+    QString sub_qstr = qstr.mid(qstr.length()-6, 6);
+    QRegExp re("\\d*");  // a digit (\d), zero or more times (*)
+
+    if (re.exactMatch(sub_qstr) == true){              // Check for last 6 digits
+        if(sub_qstr.length() >= 3/* && (qstr.contains(sub_qstr) == true || sub_qstr.contains(qstr) == true )*/){
+            qDebug() << "Digit check start = " << sub_qstr;
+
+//            QString lpr_path_for_first = "./captures/license_plates/";
+//            QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+//            QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+//            QDir myDir;
+//            if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+//                myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+//            }
+//            QFile input_file(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.txt");
+//            if(!input_file.open(QFile::WriteOnly)){
+//                qDebug() << "Error opening for write: " << input_file.errorString();
+//                return;
+//            }
+//            QTextStream outStream(&input_file);
+//            outStream << str;
+//            //outStream << str.mid(0, str.indexOf("\n"));
+//            input_file.close();
+//            pic.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.png");// pic write
+
+    //        int l = pic.rect().left();
+    //        int t = pic.rect().top();
+    //        int r = pic.rect().right();
+    //        int b = pic.rect().bottom();
+    //        QPixmap first_half = pic.copy(0, 0, pic.width(), pic.height()/2);
+    //        first_half.save("/home/sigmind/Desktop/based.png");
+
+            /*for(int mn = 0 ; mn < 4; mn++){
+                switch(mn){
+                case 0:
+                {
+                    QString lpr_path_for_first = "./captures/license_plates/";
+                    QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                    QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                    QDir myDir;
+                    if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                        myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                    }
+    //                QImage image(80, 30, QImage::Format_ARGB32_Premultiplied);
+    //                QPainter painter(&image);
+    //                painter.fillRect(image.rect(), Qt::white);
+    //                painter.drawText(image.rect(), Qt::AlignCenter | Qt::AlignVCenter,str.mid(0, str.indexOf("\n")));
+    //                image.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.png");
+                    QPixmap first_half = pic.copy(0, 0, pic.width(), pic.height()/2);
+                    first_half.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.png");
+                    //first_name = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"1.png";
+                    break;
+                }
+
+                case 1:
+                {
+                    QString lpr_path_for_first = "./captures/license_plates/";
+                    QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                    QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                    QDir myDir;
+                    if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                        myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                    }
+                    QFile input_file(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.txt");
+                    if(!input_file.open(QFile::WriteOnly)){
+                        qDebug() << "Error opening for write: " << input_file.errorString();
+                        return;
+                    }
+                    QTextStream outStream(&input_file);
+                    outStream << str.mid(0, str.indexOf("\n"));
+                    input_file.close();
+                    //first_text = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"2.txt";
+                    break;
+                }
+                case 2:
+                {
+                    QString lpr_path_for_first = "./captures/license_plates/";
+                    QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                    QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                    QDir myDir;
+                    if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                        myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                    }
+    //                QImage image(80, 30, QImage::Format_ARGB32_Premultiplied);
+    //                QPainter painter(&image);
+    //                painter.fillRect(image.rect(), Qt::white);
+    //                painter.drawText(image.rect(), Qt::AlignCenter | Qt::AlignVCenter,str.mid(str.indexOf("\n")+1, str.length()));
+    //                image.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"2.png");
+                    QPixmap first_half = pic.copy(0, pic.height()/2, pic.width(), pic.height());
+                    first_half.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"2.png");
+                    //second_name = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"3.png";
+                    break;
+                }
+                case 3:
+                {
+                    QString lpr_path_for_first = "./captures/license_plates/";
+                    QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                    QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                    QDir myDir;
+                    if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                        myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                    }
+                    QFile input_file(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"2.txt");
+                    if(!input_file.open(QFile::WriteOnly)){
+                        qDebug() << "Error opening for write: " << input_file.errorString();
+                        return;
+                    }
+                    QTextStream outStream(&input_file);
+                    outStream << str.mid(str.indexOf("\n")+1, str.length());
+                    input_file.close();
+                    //second_text = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"4.txt";
+                    break;
+                }
+                }
+            }*/
+
+//            Notification *newNoti= new Notification(str, "", QString::number(indx), pic.scaledToHeight(140), "", "");
+//            lpr_emailController->addNotLPR(newNoti);
+
+            QSqlQuery retrive_table_data;
+
+            if(retrive_table_data.exec("select * from given_lpr;")){
+
+                while(retrive_table_data.next()){
+
+                    QString number_plate = retrive_table_data.value(1).toString();
+                    number_plate = number_plate.mid(number_plate.length()-6, 6);
+                    qDebug() << "number_plate = " << number_plate << " " << sub_qstr;
+
+
+
+                    if(QString::compare(sub_qstr, number_plate) == 0 ){
+
+                        QString first_name, first_text, second_name, second_text;
+
+                        for(int mn = 0 ; mn < 4; mn++){
+                            switch(mn){
+                            case 0:
+                            {
+                                QString lpr_path_for_first = "./captures/license_plates/";
+                                QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                                QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                                QDir myDir;
+                                if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                                    myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                                }
+                                QImage image(80, 30, QImage::Format_ARGB32_Premultiplied);
+                                QPainter painter(&image);
+                                painter.fillRect(image.rect(), Qt::white);
+                                painter.drawText(image.rect(), Qt::AlignCenter | Qt::AlignVCenter,str.mid(0, str.indexOf("\n")));
+                                image.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.png");
+                                //first_name = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"1.png";
+                                break;
+                            }
+
+                            case 1:
+                            {
+                                QString lpr_path_for_first = "./captures/license_plates/";
+                                QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                                QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                                QDir myDir;
+                                if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                                    myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                                }
+                                QFile input_file(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"1.txt");
+                                if(!input_file.open(QFile::WriteOnly)){
+                                    qDebug() << "Error opening for write: " << input_file.errorString();
+                                    return;
+                                }
+                                QTextStream outStream(&input_file);
+                                outStream << str.mid(0, str.indexOf("\n"));
+                                input_file.close();
+                                //first_text = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"2.txt";
+                                break;
+                            }
+                            case 2:
+                            {
+                                QString lpr_path_for_first = "./captures/license_plates/";
+                                QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                                QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                                QDir myDir;
+                                if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                                    myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                                }
+                                QImage image(80, 30, QImage::Format_ARGB32_Premultiplied);
+                                QPainter painter(&image);
+                                painter.fillRect(image.rect(), Qt::white);
+                                painter.drawText(image.rect(), Qt::AlignCenter | Qt::AlignVCenter,str.mid(str.indexOf("\n")+1, str.length()));
+                                image.save(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"2.png");
+                                //second_name = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"3.png";
+                                break;
+                            }
+                            case 3:
+                            {
+                                QString lpr_path_for_first = "./captures/license_plates/";
+                                QString date_for_first =  QDateTime::currentDateTime().toString("dd-MM-yyyy");
+                                QString qstr_for_first = QDateTime::currentDateTime().toString("hh:mm:ss");
+                                QDir myDir;
+                                if(!myDir.exists(lpr_path_for_first+"/"+date_for_first)){
+                                    myDir.mkpath(lpr_path_for_first+"/"+date_for_first);
+                                }
+                                QFile input_file(lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"_"+"2.txt");
+                                if(!input_file.open(QFile::WriteOnly)){
+                                    qDebug() << "Error opening for write: " << input_file.errorString();
+                                    return;
+                                }
+                                QTextStream outStream(&input_file);
+                                outStream << str.mid(str.indexOf("\n")+1, str.length());
+                                input_file.close();
+                                //second_text = lpr_path_for_first+"/"+date_for_first+"/"+qstr_for_first+"/"+"4.txt";
+                                break;
+                            }
+                            }
+                        }
+
+
+                        //                    qDebug() << "Car found!";
+    //                    QString date_time_db =  QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    //                    date_time_db = encodeString(date_time_db);
+                        //                    QString img_path;
+                        //                    QDir myDir;
+                        //                    if(!myDir.exists(lpr_path+"/"+date)){
+                        //                        myDir.mkpath(lpr_path+"/"+date);
+                        //                        img_path = lpr_path+"/"+date+"/"+qstr+"_"+QTime::currentTime().toString()+".png";
+                        //                        QFile file(img_path);
+                        //                        file.open(QIODevice::WriteOnly);
+                        //                        pic.save(&file, "PNG");
+                        //                    }else{
+                        //                        myDir.mkpath(lpr_path+"/"+date);
+                        //                        img_path = lpr_path+"/"+date+"/"+qstr+"_"+QTime::currentTime().toString()+".png";
+                        //                        QFile file(img_path);
+                        //                        file.open(QIODevice::WriteOnly);
+                        //                        pic.save(&file, "PNG");
+                        //                    }
+                        //                    //    QFile file(lpr_path+qstr);
+                        //                    //    file.open(QIODevice::WriteOnly);
+                        //                    //    pic.save(&file, "PNG");
+
+                        //                    std::string plateRequest = LPR.toUtf8().constData();
+
+                        //                    //           if(plateData.find(plateRequest) != std::string::npos) {
+                        //                    //               //makeNotification(pic, qstr, indx);
+                        //                    //               emit notifyLPR(pic, qstr, indx);
+                        //                    //           }
+                        //                    //facesWindow->addObject(pic, str, indx);
+                        //                    //    facesWindow->addLPR(pic, str, indx);
+    //                    QSqlQuery qLp, qLp_insert;
+    //                    if (qLp.exec(
+    //                                "CREATE TABLE detected_LPR ( "
+    //                                "ID INTEGER PRIMARY KEY AUTOINCREMENT, "
+    //                                "first_name text, "
+    //                                "first_text text, "
+    //                                "second_name text, "
+    //                                "second_text text, "
+    //                                "date_time DATETIME "
+    //                                "); "
+    //                                )){
+    //                        qDebug()<< "Table created lpr";
+    //                    }else{
+    //                        qDebug() << "Lp table not created "<<qLp.lastError();
+    //                    }
+    //                    qDebug() << "Dynamic = " << first_name << " " << first_text << " " << second_name << " " << second_text;
+    //                    qLp_insert.prepare("insert into detected_LPR "
+    //                                       "( first_name, first_text, second_name, second_text, date_time ) "
+    //                                       "values (?, ?, ?, ?, ?) ; ");
+    //                    qLp_insert.addBindValue(first_name);
+    //                    qLp_insert.addBindValue(first_text);
+    //                    qLp_insert.addBindValue(second_name);
+    //                    qLp_insert.addBindValue(second_text);
+    //                    qLp_insert.addBindValue(date_time_db);
+    //                    qLp_insert.exec();
+    //                    qDebug() << "Dynamic1 = " << first_name << " " << first_text << " " << second_name << " " << second_text;
+
+                        Notification *newNoti= new Notification(str, "", QString::number(indx), pic.scaledToHeight(140), "", "");
+                        lpr_emailController->addNotLPR(newNoti);
+                    }
+                }
+
+
+            }
+        }
+
+
+
+    }
+
+    //    bool num_check = true;
+    //    for(int i = 0; i < sub_qstr.length(); i++){
+    //        if(sub_qstr.at(i) >= 0 &&  sub_qstr.at(i) <=9 ){
+    //            qDebug() << "(int) sub_qstr.at(i) = " <<  sub_qstr.at(i);
+    //        }
+    //    }
+
+    //    QString date_time_db =  QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    //    date_time_db = encodeString(date_time_db);
+    //    QString img_path;
+    //    QDir myDir;
+    //    if(!myDir.exists(lpr_path+"/"+date)){
+    //        myDir.mkpath(lpr_path+"/"+date);
+    //        img_path = lpr_path+"/"+date+"/"+qstr+"_"+QTime::currentTime().toString()+".png";
+    //        QFile file(img_path);
+    //        file.open(QIODevice::WriteOnly);
+    //        pic.save(&file, "PNG");
+    //    }else{
+    //        myDir.mkpath(lpr_path+"/"+date);
+    //        img_path = lpr_path+"/"+date+"/"+qstr+"_"+QTime::currentTime().toString()+".png";
+    //        QFile file(img_path);
+    //        file.open(QIODevice::WriteOnly);
+    //        pic.save(&file, "PNG");
+    //    }
+    ////    QFile file(lpr_path+qstr);
+    ////    file.open(QIODevice::WriteOnly);
+    ////    pic.save(&file, "PNG");
+
+    //    std::string plateRequest = LPR.toUtf8().constData();
+
+    //    //           if(plateData.find(plateRequest) != std::string::npos) {
+    //    //               //makeNotification(pic, qstr, indx);
+    //    //               emit notifyLPR(pic, qstr, indx);
+    //    //           }
+    //    //facesWindow->addObject(pic, str, indx);
+    //    //    facesWindow->addLPR(pic, str, indx);
+    //    QSqlQuery qLp, qLp_insert;
+    //    if (qLp.exec(
+    //                "CREATE TABLE detected_LPR ( "
+    //                "ID INTEGER PRIMARY KEY AUTOINCREMENT, "
+    //                "number_plate TEXT, "
+    //                "num_plate_pic TEXT, "
+    //                "date_time DATETIME "
+    //                "); "
+    //                )){
+    //        qDebug()<< "Table created lpr";
+    //    }else{
+    //        qDebug() << "Lp table not created "<<qLp.lastError();
+    //    }
+    //    qLp_insert.prepare("insert into detected_LPR "
+    //                       "( number_plate, num_plate_pic, date_time ) "
+    //                       "values (?, ?, ?) ; ");
+    //    qLp_insert.addBindValue(qstr);
+    //    qLp_insert.addBindValue(img_path);
+    //    qLp_insert.addBindValue(date_time_db);
+    //    qLp_insert.exec();
+
+
+    //    Notification *newNoti= new Notification(str, "", QString::number(indx), pic.scaledToHeight(140), "", "");
+    //    lpr_emailController->addNotLPR(newNoti);
+}
+
+
+void MainWindow::addObject(QPixmap pic, QString str, int indx)
+{
+
+    facesWindow->addObject(pic, str, indx);
+}
+
+void MainWindow::on_actionTracking_triggered()
+{
+    trackingWindow = new trackingSettingsDialog(this);
+    trackingWindow->show();
+
+}
+
+void MainWindow::on_tileButton_clicked()
+{
+    //    facesWindow = new Faces(this);
+    //     facesWindow->setAttribute( Qt::WA_DeleteOnClose , true);
+    //loop_off = TRUE;
+
+    facesWindow->show();
+
+}
+
+
+
+void MainWindow::on_actionSettings_triggered()
+{
+    //settingsDialog *newexSettings= new settingsDialog(this);
+    //connect(newSettings, SIGNAL(objectSensitivityChanged()), this, SLOT(setObjectThreshold()));
+    //    newSettings->exec();
+    newSettings->show();
+    //newexSettings->exec();
+}
+
+void MainWindow::setObjectThreshold()
+{
+    for(int i=0;i<feeds.size();i++){
+        feeds[i]->reset_object_threshold();
+    }
+}
+
+void MainWindow::on_actionRTSS_triggered()
+{
+    //facesWindow->deleteLater();
+}
+
+//void MainWindow::on_actionFootage_analysis_triggered()
+//{
+//    footage= new footageWindow(this);
+//    footage->par_mutex = darknet_mutex;
+//    footage->setAttribute( Qt::WA_DeleteOnClose );
+//    footage->show();
+//}
+void MainWindow::on_actionAbout_2_triggered()
+{
+    aboutDialog *about = new aboutDialog(this);
+    about->setAttribute( Qt::WA_DeleteOnClose );
+    about->show();
+}
+//void valueChanged(QPixmap p, QString str, int indx)
+//{
+//   // emit valueChangedALL(p, str,indx);
+//}
+void MainWindow::cleanTiles()
+{
+    trialTimer->stop();
+    if (facesWindow != nullptr)
+    {
+        facesWindow->deleteLater();
+        // delete facesWindow;
+        facesWindow = new Faces(this);
+        trialTimer->start(3600000);
+        // facesWindow->setAttribute( Qt::WA_DeleteOnClose , true);
+    }
+}
+
+bool MainWindow::AddToLoadTemplate(QString name, QString path)
+{
+    qDebug() << "Name " << name << " path " << path;
+    qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<Done>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+
+    //    FRthread->quit();
+    //    warker->requestWark();
+
+    //     QImageReader reader(path);
+    //     QSize size_of_image = reader.size();
+    //     int height = size_of_image.height();
+    //     int width = size_of_image.width();
+    //     qDebug() << "Height = " << height << " Width " << width << endl;
+
+    //     if(width>=500 && height>=500){
+
+    //     }
+
+    bool face_found_in_image = warker->loadImageIntoLoadTemplate(name,path);
+
+    //bool face_found_in_image = warker->loadImageIntoLoadTemplate("tomm","/home/sigmind/watchcam-testedOK/faces/temp_late/name4.png");
+
+    //bool face_found_in_image = warker->loadImageIntoLoadTemplate("tomm","/home/sigmind/watchcam-testedOK/faces/tanmoy.jpg");
+
+    if(face_found_in_image == true){
+        qDebug() << "valid image in load_temp";
+        return true;
+    }else {
+        qDebug() << "Not valid image in load_tem";
+        return false;
+    }
+
+    //qDebug() << " ___________________________________________________ ";
+    //emit loadforsingle(name, path);
+
+}
+
+void MainWindow::deleteFromLoadTem(QString image_path, QString image_name)
+{
+    //    qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<< deleteFromLoadTem >>>>>>>>>>>>>>>>>>>>>>>" << endl;
+
+    warker->deleteFromTemplate(image_path, image_name);
+}
+
+void MainWindow::addToDB(int Id, QPixmap pic, QString str, int indx,
+                         double confidence, QString date_time,
+                         int sync_states,
+                         QString date, QString im_path, QString image_name, int rec_or_not){
+    qDebug() << "In add to db" << endl;
+    /* Database implementation*/
+    if(connectionDB()){
+        //        qDebug() << "HelloFeedStatic";
+        //        QString face_path = "./captures/faces/";
+        //        QString obliq = "/";
+        //        // QString format = "dd.MM.yyyy";
+        //        //QString date_time =  QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+        //        date_time = encodeString(date_time);
+        //        QString at = "<at>";
+        //        QString date = QDate::currentDate().toString("dd.MM.yyyy");
+        //        QString img_path = face_path+date+obliq;
+        //        //        QString image_name = img_path+str+at+".png";
+        //        QString image_name = img_path+str+at+QTime::currentTime().toString()+".png";
+
+
+
+        QDir myDir;
+        if(!myDir.exists(date)) //if no directory so create directory
+        {
+            myDir.mkpath(im_path);
+            //QString image_name = img_path+name+at+QTime::currentTime().toString()+".png";
+            QFile file(image_name);
+            file.open(QIODevice::WriteOnly);
+            pic.save(&file, "PNG");
+
+        }
+
+        QSqlQuery query;
+
+
+        //        if (query.exec(
+        //                    "CREATE TABLE FeedAddFace ( "
+        //                    "Id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        //                    "name TEXT, "
+        //                    "savePath VARCHAR(250) NOT NULL, "
+        //                    "date_time DATETIME NOT NULL, "
+        //                    "confidence double NOT NULL, "
+        //                    "video_src int not null, "
+        //                    "states int not null)"
+        //                    "; "
+        //                    )){
+        //            //qDebug()<< "Table created";
+        //        }
+
+        if (query.exec(
+                    "CREATE TABLE FeedAddFace ( "
+                    "Id int not null, "
+                    "name TEXT, "
+                    "savePath VARCHAR(250) NOT NULL, "
+                    "date_time DATETIME NOT NULL, "
+                    "confidence double NOT NULL, "
+                    "video_src int not null, "
+                    "states int not null, "
+                    "rec_check int not null)"
+                    "; "
+                    )){
+            //qDebug()<< "Table created";
+        }
+
+        query.prepare("INSERT INTO FeedAddFace (Id, name, savePath, date_time, confidence, video_src, states, rec_check) VALUES (?,?,?,?,?,?,?,?);");
+        query.addBindValue(Id);
+        query.addBindValue(str);
+        query.addBindValue(image_name);
+        query.addBindValue(date_time);
+        query.addBindValue(confidence);
+        query.addBindValue(indx);
+        query.addBindValue(sync_states);
+        query.addBindValue(rec_or_not);
+
+        if (query.exec()){
+            //qDebug() << "Done";
+        }else{
+            //            qDebug() <<"Executed error "<< query.executedQuery();
+            //            qDebug() << "Last Error " << query.lastError();
+            //            qDebug() << "Not Done";
+        }
+
+
+    }else{
+        //qDebug() << "HelloNotFeed";
+    }
+}
+
+void MainWindow::on_actionDatabase_Configuration_triggered()
+{
+    qDebug() << "basedul " << endl;
+    //    configdb->show();
+    configdb->exec();
+    //    show_face->show();
+}
+
+void MainWindow::on_actionSearch_by_date_and_time_triggered()
+{
+    search_by_date_time search_ob; // search from dynamic database, object creation
+    search_ob.setModal(true);
+    search_ob.exec();
+}
+
+void MainWindow::on_actionStudent_Attendece_triggered()
+{
+    ReportGenerateFromtoTo rep;
+    rep.setModal(true);
+    rep.exec();
+}
+
+void MainWindow::on_actionEmployee_Attendence_triggered()
+{
+    qDebug() << "Employee attendence" << endl;
+    EmployeeAttendence empa;
+    empa.setModal(true);
+    empa.exec();
+}
+
+//void MainWindow::on_actionTotal_Present_Time_For_Each_Employe_triggered()
+//{
+
+//}
+
+void MainWindow::on_actionTotal_Present_Time_For_Each_Employe_toggled(bool arg1)
+{
+
+}
+
+void MainWindow::on_actionTotal_Present_Time_For_Each_Employe_triggered()
+{
+    CalculateTimePerObject cal;
+    cal.setModal(true);
+    cal.exec();
+}
+
+void MainWindow::on_actionSearch_By_Given_Image_triggered()
+{
+    //search->show();
+    sbi->show();
+    //warker->detectFaceFromImage("/home/sigmind/Pictures/WC-Tegra-DS/xhuv.png");
+}
+
+void MainWindow::on_actionFace_Notification_triggered()
+{
+    if(!checker_not_flg){
+        nots->setVisible(true);
+        checker_not_flg= true;
+        //qDebug()<<"set visible true";
+    }
+    else {
+        nots->setVisible(false);
+        checker_not_flg= false;
+        //qDebug()<<"set visible false";
+    }
+}
